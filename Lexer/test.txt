@@ -1,7 +1,12 @@
+/*
+     Este e
+	s mir primer c
+	omentario de una sola linea.*/
 int c = 2;
 int k = 2;
 int l = 2 + 2;
 while (c < l) 
 {
+// Este es el segundo comentario.
 	print("HOla");
 }
