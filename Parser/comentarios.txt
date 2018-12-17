@@ -1,6 +1,0 @@
-
-Encontré el siguiente comentario multilínea en la línea 1: 
-	
-     Este e
-	s mir primer c
-	omentario de una sola linea.

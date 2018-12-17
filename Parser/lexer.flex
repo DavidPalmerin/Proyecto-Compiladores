@@ -99,6 +99,16 @@ espacio [ \t]
 				return DEFAULT;
 			}
 
+"return"	{ 
+				fprintf(tokens_output, "Encontré un RETURN %s\n", yytext);
+				return RETURN;
+			}
+
+"break"		{ 
+				fprintf(tokens_output, "Encontré un BREAK %s\n", yytext);
+				return BREAK;
+			}
+
 "true"		{ 
 				fprintf(tokens_output, "Encontré un TRUE %s\n", yytext);
 				return TRUE;

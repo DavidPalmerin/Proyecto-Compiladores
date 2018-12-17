@@ -1,7 +1,10 @@
-int c = 2;
-int k = 2;
-int l = 2 + 2;
-while (c < l) 
+int c;
+func int foo(int k, int l)
 {
-	print("HOla");
+	int r;
+	r = 2;
+	do print "Palmi infel"; while (true);
+	print "Infiel.";
+	while (false) return ; 
+	return 10;
 }

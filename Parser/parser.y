@@ -40,8 +40,8 @@ extern FILE *comentarios;
 %token<num> NUMERO  
 %token TRUE FALSE
 %token INT FLOAT DOUBLE VOID STRUCT CHAR
-%token WHILE SWITCH FOR DO
-%token RETURN FUNC
+%token WHILE SWITCH FOR DO IF
+%token RETURN FUNC 
 %token COM PYC PUNES DOT
 %token BREAK CASE DEFAULT
 %token PRINT
@@ -55,7 +55,6 @@ extern FILE *comentarios;
 %left MUL DIV MOD
 %right NOT
 %nonassoc LPAR RPAR LKEY RKEY LCOR RCOR
-%left IF
 %left ELSE
 
 %start programa
