@@ -1,0 +1,7 @@
+int c = 2;
+int k = 2;
+int l = 2 + 2;
+while (c < l) 
+{
+	print("HOla");
+}

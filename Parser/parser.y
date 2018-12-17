@@ -7,10 +7,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-  //void yyerror(char*, char*);
+void yyerror(char *);
+//void yyerror(char*, char*);
 extern int yylex();
 extern int yylineno;
-
+extern FILE *yyin;
+extern FILE *yyout;
+extern FILE *f;
+extern FILE *tokens_output;
+extern FILE *errores_lexicos;
 %}
 
 %union{
@@ -18,15 +23,19 @@ extern int yylineno;
     char sval;
   }car;
   struct {
+    char* sval;
+  }cadena;
+  struct {
     int ival;
   }num;
  }
 
-%token<car> ID CAR CADENA
+%token<car> CAR 
+%token<cadena> ID CADENA
 %token<num> NUMERO  
 %token TRUE FALSE
-%token INT FLOAT DOUBLE VOID STRUCT
-%token WHILE SWITH FOR
+%token INT FLOAT DOUBLE VOID STRUCT CHAR
+%token WHILE SWITCH FOR DO
 %token RETURN FUNC
 %token COM PYC PUNES DOT
 %token BREAK CASE DEFAULT
@@ -48,32 +57,32 @@ extern int yylineno;
 
 %%
 
-programa: declaraciones instrucciones;
+programa: decl funciones;
 
-declaraciones : tipo lista PYC 
-                | ;
+decl : tipo lista PYC 
+            | ;
 
-tipo:     INT 
-        | FLOAT 
-        | DOUBLE
-        | CHAR
-        | VOID
-        | STRUCT LKEY declaraciones RKEY;
+tipo:         INT 
+            | FLOAT 
+            | DOUBLE
+            | CHAR
+            | VOID
+            | STRUCT LKEY decl RKEY;
 
 lista : lista COM ID arreglo
-        | ID arreglo;
+            | ID arreglo;
 
 arreglo : LCOR NUMERO RCOR arreglo
-        | ;
+            | ;
 
-funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  declaraciones setencias RKEY funciones
-        | ;
+funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones
+            | ;
 
 argumentos : lista_args
-        | ;
+            | ;
 
 lista_args : lista_args COM tipo ID parte_arr
-        | tipo ID parte_arr
+            | tipo ID parte_arr
 
 parte_arr : LCOR RCOR parte_arr
             | ;
@@ -85,12 +94,12 @@ sentencia : IF LPAR condicion RPAR sentencia
             | IF LPAR condicion RPAR sentencias ELSE sentencia
             | WHILE LPAR condicion RPAR sentencia 
             | DO sentencia WHILE LPAR condicion RPAR PYC 
-            | FOR LPAR sentencia PYC condicion PYC sentencia RPA sentencia
+            | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencia
             | parte_izq ASIG expresion PYC
             | RETURN expresion PYC
             | RETURN PYC
             | LKEY sentencia RKEY
-            | SWITCH LPAR expresion RPAR LKEY predeterm RKEY
+            | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
             | BREAK PYC
             | PRINT expresion PYC;
 
@@ -134,12 +143,20 @@ condicion: condicion OR condicion
 
 relacional: MAYOR | MENOR | MAYOR_IGUAL | MENOR_IGUAL | DIF | IGUAL;
 %%
+void yyerror(char *s){
+    printf("%s: en la línea %d\n",s, yylineno);
+}
 
 int main(int argc, char **argv) {
   if(argc < 2)	return -1;
-  FILE *f= fopen(argv[1], "r");
+  f= fopen(argv[1], "r");
   if (!f)	return -1;
+  tokens_output = fopen("tokens_output.txt", "w");
+  errores_lexicos = fopen("errores_lexicos.txt", "w");
+
   yyin = f;
+  yyout = tokens_output;
+
   int p = yyparse();
   if(p)
     printf("La entrada es rechazada de acuerdo a la gramática.\n");

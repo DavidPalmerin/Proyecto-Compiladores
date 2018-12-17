@@ -1,8 +1,8 @@
 %{
 	#include <stdio.h>
 	#include <stdlib.h>
-	#include "tokens.h"
-	//#include "parser.tab.h"
+	//#include "tokens.h"
+	#include "parser.tab.h"
 
 	/* Variables para analizador léxico. */
 	int pos;
@@ -33,219 +33,219 @@ espacio [ \t]
 
 "int"		{ 
 				fprintf(tokens_output, "Encontré un tipo int %s\n", yytext);
-				//return INT;
+				return INT;
 			}
 
 "float" 	{ 
 				fprintf(tokens_output, "Encontré un tipo float%s\n", yytext);
-				//return FLOAT;
+				return FLOAT;
 			}
 
 "double"	{ 
 				fprintf(tokens_output, "Encontré un DOUBLE %s\n", yytext);
-				//return DOUBLE;
+				return DOUBLE;
 			}
 
 "char"		{ 
 				fprintf(tokens_output, "Encontré un CHAR %s\n", yytext);
-				//return CHAR;
+				return CHAR;
 			}
 
 "void"		{ 
 				fprintf(tokens_output, "Encontré un VOID %s\n", yytext);
-				//return VOID;
+				return VOID;
 			}
 
 
 "struct"	{ 
 				fprintf(tokens_output, "Encontré un STRUCT %s\n", yytext);
-				//return STRUCT;
+				return STRUCT;
 			}
 
 
 "if" 		{ 
 				fprintf(tokens_output, "Encontré un IF %s\n", yytext);
-				//return IF;
+				return IF;
 			}
 
 
 "while"		{ 
 				fprintf(tokens_output, "Encontré un WHILE %s\n", yytext);
-				//return WHILE;
+				return WHILE;
 			}
 
 "for"		{ 
 				fprintf(tokens_output, "Encontré un FOR %s\n", yytext);
-				//return FOR;
+				return FOR;
 			}
 
 "do"		{ 
 				fprintf(tokens_output, "Encontré un DO %s\n", yytext);
-				//return DO;
+				return DO;
 			}
 
 "switch"	{ 
 				fprintf(tokens_output, "Encontré un SWITCH %s\n", yytext);
-				//return SWITCH;
+				return SWITCH;
 			}
 
 "case"		{ 
 				fprintf(tokens_output, "Encontré un CASE %s\n", yytext);
-				//return CASE;
+				return CASE;
 			}
 
 "default"	{ 
 				fprintf(tokens_output, "Encontré un DEFAULT %s\n", yytext);
-				//return DEFAULT;
+				return DEFAULT;
 			}
 
 "true"		{ 
 				fprintf(tokens_output, "Encontré un TRUE %s\n", yytext);
-				//return TRUE;
+				return TRUE;
 			}
 
 "false"		{ 
 				fprintf(tokens_output, "Encontré un FALSE %s\n", yytext);
-				//return FALSE;
+				return FALSE;
 			}
 
 "func"		{ 
 				fprintf(tokens_output, "Encontré un FUNC %s\n", yytext);
-				//return FUNC;
+				return FUNC;
 			}
 
 
 "print"		{
 			  
 				fprintf(tokens_output, "Encontré un print %s\n", yytext);
-				//return PRINT;
+				return PRINT;
 			}
 
 
 "="			{ 
 				fprintf(tokens_output, "Encontré un ASIG %s\n", yytext);
-				//return ASIG;
+				return ASIG;
 			}
 
 "&&"		{ 
 				fprintf(tokens_output, "Encontré un AND %s\n", yytext);
-				//return AND;
+				return AND;
 			}
 
 "||"		{ 
 				fprintf(tokens_output, "Encontré un OR %s\n", yytext);
-				//return OR;
+				return OR;
 			}
 
 "=="		{ 
 				fprintf(tokens_output, "Encontré un IGUAL %s\n", yytext);
-				//return IGUAL;
+				return IGUAL;
 			}
 
 "!="		{ 
 				fprintf(tokens_output, "Encontré un DIF %s\n", yytext);
-				//return DIF;
+				return DIF;
 			}
 
 ">"			{ 
 				fprintf(tokens_output, "Encontré un MAYOR %s\n", yytext);
-				//return MAYOR;
+				return MAYOR;
 			}
 
 "<"			{ 
 				fprintf(tokens_output, "Encontré un MENOR %s\n", yytext);
-				//return MENOR;
+				return MENOR;
 			}
 
 ">="		{ 
 				fprintf(tokens_output, "Encontré un MAYOR_IGUAL %s\n", yytext);
-				//return MAYOR_IGUAL;
+				return MAYOR_IGUAL;
 			}
 
 "<="		{ 
-				fprintf(tokens_output, "Encontré un MENOR_IUAL %s\n", yytext);
-				//return MENOR_IGUAL;
+				fprintf(tokens_output, "Encontré un MENOR_IGUAL %s\n", yytext);
+				return MENOR_IGUAL;
 			}
 
 "+"			{ 
 				fprintf(tokens_output, "Encontré un MAS %s\n", yytext);
-				//return MAS;
+				return MAS;
 			}
 
 "-"			{ 
 				fprintf(tokens_output, "Encontré un MENOS %s\n", yytext);
-				//return MENOS;
+				return MENOS;
 			}
 
 "*"			{ 
 				fprintf(tokens_output, "Encontré un MUL %s\n", yytext);
-				//return MUL;
+				return MUL;
 			}
 
 "/"			{ 
 				fprintf(tokens_output, "Encontré un DIV %s\n", yytext);
-				//return DIV;
+				return DIV;
 			}
 
 "%"			{ 
 				fprintf(tokens_output, "Encontré un MOD %s\n", yytext);
-				//return MOD;
+				return MOD;
 			}
 
 
 "!"			{ 
 				fprintf(tokens_output, "Encontré un NOT %s\n", yytext);
-				//return NOT;
+				return NOT;
 			}
 
 "("			{ 
 				fprintf(tokens_output, "Encontré un LPAR %s\n", yytext);
-				//return LPAR;
+				return LPAR;
 			}
 
 ")"			{ 
 				fprintf(tokens_output, "Encontré un RPAR %s\n", yytext);
-				//return RPAR;
+				return RPAR;
 			}
 
 "{"			{ 
 				fprintf(tokens_output, "Encontré un LKEY %s\n", yytext);
-				//return LKEY;
+				return LKEY;
 			}
 
 "}"			{ 
 				fprintf(tokens_output, "Encontré un RKEY %s\n", yytext);
-				//return RKEY;
+				return RKEY;
 			}
 
 "["			{ 
 				fprintf(tokens_output, "Encontré un LCOR %s\n", yytext);
-				//return LCOR;
+				return LCOR;
 			}
 
 "]"			{ 
 				fprintf(tokens_output, "Encontré un RCOR %s\n", yytext);
-				//return RCOR;
+				return RCOR;
 			}
 
 ";"			{ 
-				fprintf(tokens_output, "Encontré un PC %s\n", yytext);
-				//return PYC;
+				fprintf(tokens_output, "Encontré un PYC %s\n", yytext);
+				return PYC;
 			}
 
 ","			{ 
 				fprintf(tokens_output, "Encontré un COM %s\n", yytext);
-				//return COM;
+				return COM;
 			}
 
 ":"			{ 
 				fprintf(tokens_output, "Encontré un PUNES %s\n", yytext);
-				//return PUNES;
+				return PUNES;
 			}
 
 "."			{ 
 				fprintf(tokens_output, "Encontré un DOT %s\n", yytext);
-				//return DOT;
+				return DOT;
 			}
 
 \n 			{
@@ -254,32 +254,38 @@ espacio [ \t]
 
 {id}		{
 				fprintf(tokens_output, "Encontré un id: %s\n", yytext);
-				//return ID;
+				yylval.cadena.sval = yytext;
+				return ID;
 			}
 
 {char}		{ 
 				fprintf(tokens_output, "Encontré un char: %s\n", yytext);
-				//return CAR;
+				yylval.car.sval = yytext[0];
+				return CAR;
 			}
 
 {int}		{ 
 				fprintf(tokens_output, "Encontré un int: %s\n", yytext);
-				//return NUMERO; 
+				yylval.num.ival = atoi(yytext);	
+				return NUMERO; 
 			}
 
 {float}		{ 
 				fprintf(tokens_output, "Encontré un float: %s\n", yytext);
-				//return NUMERO; 
+				yylval.num.ival = atoi(yytext);
+				return NUMERO; 
 			}
 
 {double}	{ 
 				fprintf(tokens_output, "Encontré un double: %s\n", yytext);
-				//return NUMERO;
+				yylval.num.ival = atoi(yytext);
+				return NUMERO;
 			}
 
 {cadena}	{ 
 				fprintf(tokens_output, "Encontré una cadena: %s\n", yytext);
-				//return CADENA;
+				yylval.cadena.sval = yytext;
+				return CADENA;
 			}
 
 {espacio}	{
@@ -326,7 +332,7 @@ espacio [ \t]
 						}
 
 %%
-
+/*
 int main(int argc, char** argv)
 {
 	f = fopen(argv[1], "r");
@@ -342,5 +348,5 @@ int main(int argc, char** argv)
 	fclose(errores_lexicos);
 	fclose(comentarios);
 }
-
+*/
 
