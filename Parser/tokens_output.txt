@@ -1,0 +1,5 @@
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: c
+Encontré un espacio
+Encontré un ASIG =

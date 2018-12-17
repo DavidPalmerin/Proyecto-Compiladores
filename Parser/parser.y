@@ -13,9 +13,14 @@ extern int yylex();
 extern int yylineno;
 extern FILE *yyin;
 extern FILE *yyout;
+
+// Archivo a leer
 extern FILE *f;
+
+// Archivos de salida
 extern FILE *tokens_output;
 extern FILE *errores_lexicos;
+extern FILE *comentarios;
 %}
 
 %union{
@@ -153,6 +158,7 @@ int main(int argc, char **argv) {
   if (!f)	return -1;
   tokens_output = fopen("tokens_output.txt", "w");
   errores_lexicos = fopen("errores_lexicos.txt", "w");
+  comentarios = fopen("comentarios.txt", "w");
 
   yyin = f;
   yyout = tokens_output;
@@ -162,6 +168,10 @@ int main(int argc, char **argv) {
     printf("La entrada es rechazada de acuerdo a la gramática.\n");
   else
     printf("La entrada es aceptada de acuerdo a la gramática.\n");
+
   fclose(f);
+  fclose(tokens_output);  
+  fclose(errores_lexicos);
+  fclose(comentarios);
   return 0;
 }
