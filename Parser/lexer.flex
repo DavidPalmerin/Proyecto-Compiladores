@@ -24,8 +24,8 @@ id      [_a-zA-Z][_a-zA-Z0-9]*
 digito 	[0-9]
 int    	[\-+]?[0-9]+
 char    \'[a-zA-Z]\'
-float   {int}.{digito}{1,7}
-double  {int}.{digito}{8,16}
+float   {int}\.{digito}{1,7}
+double  {int}\.{digito}{8,16}
 cadena  \"[^"]*\"
 espacio [ \t]
 
