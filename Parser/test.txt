@@ -1,10 +1,18 @@
 int c;
 func int foo(int k, int l)
 {
-	int r;
+	int r, suma;
 	r = 2;
-	do print "Palmi infel"; while (true);
+	do print "Palmi infel"; print "Ya corte al Eric."; suma = r(); while (10 < 20);
 	print "Infiel.";
-	while (false) return ; 
+	//for(c = 0; c < 3; c = c + 1) print "Melissa";
+	while (10 < 20){
+//		suma = 0;
+		print "Melisa con una s.";
+		print "Hola";
+	}
 	return 10;
 }
+
+
+

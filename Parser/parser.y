@@ -94,11 +94,11 @@ parte_arr : LCOR RCOR parte_arr
 sentencias : sentencias sentencia 
             | sentencia;
 
-sentencia : IF LPAR condicion RPAR sentencia
-            | IF LPAR condicion RPAR sentencias ELSE sentencia
-            | WHILE LPAR condicion RPAR sentencia 
-            | DO sentencia WHILE LPAR condicion RPAR PYC 
-            | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencia
+sentencia : IF LPAR condicion RPAR sentencias
+            | IF LPAR condicion RPAR sentencias ELSE sentencias
+            | WHILE LPAR condicion RPAR sentencias 
+            | DO sentencias WHILE LPAR condicion RPAR PYC 
+            | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
             | parte_izq ASIG expresion PYC
             | RETURN expresion PYC
             | RETURN PYC
