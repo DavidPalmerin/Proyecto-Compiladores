@@ -5,8 +5,8 @@
 int c = 2;
 int k = 2;
 int l = 2 + 2;
-while (c < l) 
+while (1.09923902390932<29.1) 
 {
 // Este es el segundo comentario.
-	print("HOla");
+	print("HOla"); print "quibo"
 }

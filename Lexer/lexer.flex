@@ -26,7 +26,7 @@ int     [\-+]?[0-9]+
 char    \'[a-zA-Z]\'
 float   {int}\.{digito}{1,7}
 double  {int}\.{digito}{8,16}
-cadena  \".*\"
+cadena  \"[^"]*\"
 espacio [ \t]
 
 %%
