@@ -56,6 +56,7 @@ extern FILE *comentarios;
 %right NOT
 %nonassoc LPAR RPAR LKEY RKEY LCOR RCOR
 %left ELSE
+%left IFX 
 
 %start programa
 
@@ -95,9 +96,12 @@ parte_arr : LCOR RCOR parte_arr
 sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
             | sentencia {printf("sentencias -> sentencia\n");};
 
-sentencia : IF LPAR condicion RPAR sentencias 
-            {printf("sentencias -> if ( condicion ) sentencias\n");}
-            | IF LPAR condicion RPAR sentencias ELSE sentencias {printf("sentencias -> if ( condicion ) sentencias else sentencias\n");}
+sentif : sentencias ELSE sentencias
+        {printf("sentif -> else sentencias\n");}
+        | sentencias;
+
+sentencia :  IF LPAR condicion RPAR sentif
+            {printf("sentencia -> if ( condicion ) sentencias sentif\n");}
             | WHILE LPAR condicion RPAR sentencias 
             {printf("sentencias -> while ( condicion ) sentencias\n");}
             | DO sentencias WHILE LPAR condicion RPAR PYC
@@ -111,7 +115,7 @@ sentencia : IF LPAR condicion RPAR sentencias
             | RETURN PYC
             {printf("sentencias -> return ;\n");}
             | LKEY sentencias RKEY
-            {printf("sentencias -> { sentencia }\n");}
+            {printf("sentencias -> { sentencias }\n");}
             | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
             {printf("sentencias -> switch ( expresion ) { casos prederterm} \n");}
             | BREAK PYC {printf("sentencias -> break ;\n");}
@@ -145,11 +149,11 @@ expresion: expresion MAS expresion
             {printf("expresion -> expresion mod expresion \n");}
             | var_arreglo
             {printf("expresion -> var_arreglo\n");}
-            | CAR {printf("expresion -> car\n");}
-            | CADENA {printf("expresion -> cadena\n");}
-            | NUMERO {printf("expresion -> num\n");}
+            | CAR {printf("expresion -> car %c\n", $1.sval);}
+            | CADENA {printf("expresion -> cadena %s\n", $1.sval);}
+            | NUMERO {printf("expresion -> num %d\n", $1.ival);}
             | ID LPAR parametros RPAR 
-            {printf("expresion -> id ( parametros )\n");};
+            {printf("expresion -> id %s ( parametros )\n", $1.sval);};
 
 parametros: lista_param {printf("parametros-> lista_param\n");}
             | %empty {};
@@ -205,3 +209,16 @@ int main(int argc, char **argv) {
   fclose(comentarios);
   return 0;
 }
+/*
+mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
+            | sentencias {printf("mif -> sentencias\n");};
+
+uif : IF LPAR condicion RPAR sentencias  
+      {printf("uif -> if ( condicion ) sentencias\n");}
+      | IF LPAR condicion RPAR mif ELSE uif
+      {printf("uif -> if ( condicion ) mif else uif\n");};
+
+sentif : ELSE sentencias
+        {printf("sentif -> else sentencias\n");}
+        | %prec IFX %empty {};
+*/

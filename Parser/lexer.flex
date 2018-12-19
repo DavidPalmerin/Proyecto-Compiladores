@@ -68,6 +68,10 @@ espacio [ \t]
 				return IF;
 			}
 
+"else" 		{ 
+				fprintf(tokens_output, "Encontré un ELSE %s\n", yytext);
+				return ELSE;
+			}
 
 "while"		{ 
 				fprintf(tokens_output, "Encontré un WHILE %s\n", yytext);
