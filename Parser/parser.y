@@ -64,7 +64,7 @@ extern FILE *comentarios;
 programa: decl funciones {printf("programa -> decl funciones\n");};
 
 decl : tipo lista PYC {printf("decl -> tipo lista PYC\n");}
-            | ;
+            | %empty {};
 
 tipo:         INT {printf("tipo -> int\n");}
             | FLOAT {printf("tipo -> float\n");}
@@ -77,20 +77,20 @@ lista : lista COM ID arreglo {printf("lista -> lista , id arreglo\n");}
             | ID arreglo {printf("lista- >id arreglo\n");};
 
 arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
-            | ;
+            | %empty {};
 
 funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
-            | ;
+            | %empty {};
 
 argumentos : lista_args {printf("argumentos -> lista_args\n");}
-            | ;
+            | %empty {};
 
 lista_args : lista_args COM tipo ID parte_arr {printf("lista_args -> lista_args , tipo id parte_arr\n");}
             | tipo ID parte_arr {printf("lista_args -> tipo id parte_arr\n");}
 
 parte_arr : LCOR RCOR parte_arr 
             {printf("parte_arr -> [] parte_arr\n");}
-            | ;
+            | %empty {};
 
 sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
             | sentencia {printf("sentencias -> sentencia\n");};
@@ -101,7 +101,7 @@ sentencia : IF LPAR condicion RPAR sentencias
             | WHILE LPAR condicion RPAR sentencias 
             {printf("sentencias -> while ( condicion ) sentencias\n");}
             | DO sentencias WHILE LPAR condicion RPAR PYC
-            {printf("sentencias -> do sentencias while ( condicion ) sentencias ;\n");} 
+            {printf("sentencias -> do sentencias while ( condicion) ;\n"); } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
             {printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");}
             | parte_izq ASIG expresion PYC
@@ -110,7 +110,7 @@ sentencia : IF LPAR condicion RPAR sentencias
             {printf("sentencias -> return expresion ;\n");}
             | RETURN PYC
             {printf("sentencias -> return ;\n");}
-            | LKEY sentencia RKEY
+            | LKEY sentencias RKEY
             {printf("sentencias -> { sentencia }\n");}
             | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
             {printf("sentencias -> switch ( expresion ) { casos prederterm} \n");}
@@ -120,11 +120,11 @@ sentencia : IF LPAR condicion RPAR sentencias
 
 casos : CASE PUNES sentencia predeterm
         {printf("casos -> case : sentencia perdeterm\n");}
-            | ;
+            | %empty {};
 
 predeterm : DEFAULT PUNES sentencia
             {printf("predeterm -> default : sentencia\n");}
-            | ;
+            | %empty {};
 
 parte_izq : ID {printf("parte_izq -> id\n");}
             | var_arreglo {printf("parte_izq -> var_arreglo\n");}
@@ -152,7 +152,7 @@ expresion: expresion MAS expresion
             {printf("expresion -> id ( parametros )\n");};
 
 parametros: lista_param {printf("parametros-> lista_param\n");}
-            | ;
+            | %empty {};
 
 lista_param: lista_param COM expresion 
             {printf("lista_param -> lista_param , expresion\n");}
