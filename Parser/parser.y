@@ -61,91 +61,122 @@ extern FILE *comentarios;
 
 %%
 
-programa: decl funciones;
+programa: decl funciones {printf("programa -> decl funciones\n");};
 
-decl : tipo lista PYC 
+decl : tipo lista PYC {printf("decl -> tipo lista PYC\n");}
             | ;
 
-tipo:         INT 
-            | FLOAT 
-            | DOUBLE
-            | CHAR
-            | VOID
-            | STRUCT LKEY decl RKEY;
+tipo:         INT {printf("tipo -> int\n");}
+            | FLOAT {printf("tipo -> float\n");}
+            | DOUBLE {printf("tipo -> double\n");}
+            | CHAR {printf("tipo -> char\n");}
+            | VOID {printf("tipo -> void\n");}
+            | STRUCT LKEY decl RKEY {printf("tipo -> struct { decl }\n");};
 
-lista : lista COM ID arreglo
-            | ID arreglo;
+lista : lista COM ID arreglo {printf("lista -> lista , id arreglo\n");}
+            | ID arreglo {printf("lista- >id arreglo\n");};
 
-arreglo : LCOR NUMERO RCOR arreglo
+arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
             | ;
 
-funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones
+funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
             | ;
 
-argumentos : lista_args
+argumentos : lista_args {printf("argumentos -> lista_args\n");}
             | ;
 
-lista_args : lista_args COM tipo ID parte_arr
-            | tipo ID parte_arr
+lista_args : lista_args COM tipo ID parte_arr {printf("lista_args -> lista_args , tipo id parte_arr\n");}
+            | tipo ID parte_arr {printf("lista_args -> tipo id parte_arr\n");}
 
-parte_arr : LCOR RCOR parte_arr
+parte_arr : LCOR RCOR parte_arr 
+            {printf("parte_arr -> [] parte_arr\n");}
             | ;
 
-sentencias : sentencias sentencia 
-            | sentencia;
+sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
+            | sentencia {printf("sentencias -> sentencia\n");};
 
-sentencia : IF LPAR condicion RPAR sentencias
-            | IF LPAR condicion RPAR sentencias ELSE sentencias
+sentencia : IF LPAR condicion RPAR sentencias 
+            {printf("sentencias -> if ( condicion ) sentencias\n");}
+            | IF LPAR condicion RPAR sentencias ELSE sentencias {printf("sentencias -> if ( condicion ) sentencias else sentencias\n");}
             | WHILE LPAR condicion RPAR sentencias 
-            | DO sentencias WHILE LPAR condicion RPAR PYC 
+            {printf("sentencias -> while ( condicion ) sentencias\n");}
+            | DO sentencias WHILE LPAR condicion RPAR PYC
+            {printf("sentencias -> do sentencias while ( condicion ) sentencias ;\n");} 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
+            {printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");}
             | parte_izq ASIG expresion PYC
+            {printf("sentencias -> parte_izq = expresion\n");}
             | RETURN expresion PYC
+            {printf("sentencias -> return expresion ;\n");}
             | RETURN PYC
+            {printf("sentencias -> return ;\n");}
             | LKEY sentencia RKEY
+            {printf("sentencias -> { sentencia }\n");}
             | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
-            | BREAK PYC
-            | PRINT expresion PYC;
+            {printf("sentencias -> switch ( expresion ) { casos prederterm} \n");}
+            | BREAK PYC {printf("sentencias -> break ;\n");}
+            | PRINT expresion PYC 
+            {printf("sentencias -> print expresion ;\n");}; 
 
 casos : CASE PUNES sentencia predeterm
+        {printf("casos -> case : sentencia perdeterm\n");}
             | ;
 
 predeterm : DEFAULT PUNES sentencia
+            {printf("predeterm -> default : sentencia\n");}
             | ;
 
-parte_izq : ID
-            | var_arreglo
-            | ID DOT ID
+parte_izq : ID {printf("parte_izq -> id\n");}
+            | var_arreglo {printf("parte_izq -> var_arreglo\n");}
+            | ID DOT ID {printf("parte_izq -> id.id\n");}
 
-var_arreglo : ID LCOR expresion RCOR
-            | var_arreglo LCOR expresion RCOR ;
+var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n");}
+            | var_arreglo LCOR expresion RCOR {printf("var_arreglo -> var arreglo [ expresion ]\n");};
 
-expresion: expresion MAS expresion
-            | expresion MENOS expresion
+expresion: expresion MAS expresion 
+            {printf("expresion -> expresion + expresion \n");}
+            | expresion MENOS expresion 
+            {printf("expresion -> expresion - expresion \n");}
             | expresion MUL expresion
+            {printf("expresion -> expresion * expresion \n");}
             | expresion DIV expresion
+            {printf("expresion -> expresion / expresion \n");}
             | expresion MOD expresion
+            {printf("expresion -> expresion mod expresion \n");}
             | var_arreglo
-            | CAR
-            | CADENA 
-            | NUMERO
-            | ID LPAR parametros RPAR;
+            {printf("expresion -> var_arreglo\n");}
+            | CAR {printf("expresion -> car\n");}
+            | CADENA {printf("expresion -> cadena\n");}
+            | NUMERO {printf("expresion -> num\n");}
+            | ID LPAR parametros RPAR 
+            {printf("expresion -> id ( parametros )\n");};
 
-parametros: lista_param
+parametros: lista_param {printf("parametros-> lista_param\n");}
             | ;
 
-lista_param: lista_param COM expresion
-            | expresion;
+lista_param: lista_param COM expresion 
+            {printf("lista_param -> lista_param , expresion\n");}
+            | expresion {printf("lista_param -> expresion\n");};
 
-condicion: condicion OR condicion 
+condicion: condicion OR condicion  
+            {printf("condicion -> condicion || condicion \n");}
             | condicion AND condicion 
+            {printf("condicion -> condicion && condicion \n");}
             | NOT condicion 
+            {printf("condicion -> ! condicion \n");}
             | LPAR condicion RPAR 
+            {printf("condicion -> ( condicion ) \n");}
             | expresion relacional expresion
-            | TRUE 
-            | FALSE; 
+            {printf("condicion -> expresion rel expresion \n");}
+            | TRUE {printf("condicion -> true \n");}
+            | FALSE {printf("condicion -> false\n");}; 
 
-relacional: MAYOR | MENOR | MAYOR_IGUAL | MENOR_IGUAL | DIF | IGUAL;
+relacional: MAYOR {printf("rel-> >\n");}
+          | MENOR {printf("rel->  <\n");}
+          | MAYOR_IGUAL {printf("rel->  >=\n");}
+          | MENOR_IGUAL {printf("rel->  <=\n");}
+          | DIF {printf("rel->  !=\n");}
+          | IGUAL {printf("rel->  ==\n");};
 %%
 void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
