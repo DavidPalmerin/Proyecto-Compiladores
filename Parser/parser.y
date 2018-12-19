@@ -64,7 +64,7 @@ extern FILE *comentarios;
 
 programa: decl funciones {printf("programa -> decl funciones\n");};
 
-decl : tipo lista PYC {printf("decl -> tipo lista PYC\n");}
+decl : tipo lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
             | %empty {};
 
 tipo:         INT {printf("tipo -> int\n");}
@@ -122,8 +122,8 @@ sentencia :  IF LPAR condicion RPAR sentif
             | PRINT expresion PYC 
             {printf("sentencias -> print expresion ;\n");}; 
 
-casos : CASE PUNES sentencia predeterm
-        {printf("casos -> case : sentencia perdeterm\n");}
+casos : CASE PUNES NUMERO sentencia casos
+        {printf("casos -> case : sentencia casos\n");}
             | %empty {};
 
 predeterm : DEFAULT PUNES sentencia
