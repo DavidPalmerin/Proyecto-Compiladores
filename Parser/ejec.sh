@@ -1,5 +1,5 @@
 #!/bin/bash
 flex lexer.flex 
-bison -d parser.y
+/usr/local/opt/bison@3.2/bin/bison -d parser.y
 gcc *.c -o gram
 ./gram test.txt
