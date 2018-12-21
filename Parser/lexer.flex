@@ -2,6 +2,7 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	//#include "tokens.h"
+	#include <stdbool.h>
 
 	#include "attributes.h"
 	#include "parser.tab.h"		
