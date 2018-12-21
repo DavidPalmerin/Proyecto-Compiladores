@@ -7,20 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "attributes.h"
+
 void yyerror(char *);
 //void yyerror(char*, char*);
+
 extern int yylex();
 extern int yylineno;
-extern FILE *yyin;
-extern FILE *yyout;
 
-// Archivo a leer
-extern FILE *f;
-
-// Archivos de salida
-extern FILE *tokens_output;
-extern FILE *errores_lexicos;
-extern FILE *comentarios;
 %}
 
 %union{
@@ -30,9 +24,7 @@ extern FILE *comentarios;
   struct {
     char* sval;
   }cadena;
-  struct {
-    int ival;
-  }num;
+  numero num;   
  }
 
 %token<car> CAR 
@@ -151,7 +143,7 @@ expresion: expresion MAS expresion
             {printf("expresion -> var_arreglo\n");}
             | CAR {printf("expresion -> car %c\n", $1.sval);}
             | CADENA {printf("expresion -> cadena %s\n", $1.sval);}
-            | NUMERO {printf("expresion -> num %d\n", $1.ival);}
+            | NUMERO {printf("expresion -> num %s\n", $1.val);}
             | ID LPAR parametros RPAR 
             {printf("expresion -> id %s ( parametros )\n", $1.sval);};
 
@@ -186,29 +178,7 @@ void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
 }
 
-int main(int argc, char **argv) {
-  if(argc < 2)	return -1;
-  f= fopen(argv[1], "r");
-  if (!f)	return -1;
-  tokens_output = fopen("tokens_output.txt", "w");
-  errores_lexicos = fopen("errores_lexicos.txt", "w");
-  comentarios = fopen("comentarios.txt", "w");
 
-  yyin = f;
-  yyout = tokens_output;
-
-  int p = yyparse();
-  if(p)
-    printf("La entrada es rechazada de acuerdo a la gramática.\n");
-  else
-    printf("La entrada es aceptada de acuerdo a la gramática.\n");
-
-  fclose(f);
-  fclose(tokens_output);  
-  fclose(errores_lexicos);
-  fclose(comentarios);
-  return 0;
-}
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
             | sentencias {printf("mif -> sentencias\n");};

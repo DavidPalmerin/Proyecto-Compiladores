@@ -3,6 +3,7 @@
 	#include <stdlib.h>
 	//#include "tokens.h"
 	#include "parser.tab.h"
+	#include "attributes.h"
 
 	/* Variables para analizador léxico. */
 	int pos;
@@ -280,19 +281,22 @@ espacio [ \t]
 
 {int}		{ 
 				fprintf(tokens_output, "Encontré un int: %s\n", yytext);
-				yylval.num.ival = atoi(yytext);	
+				strcpy(yylval.num.val, yytext);
+				yylval.num.type = 0;	
 				return NUMERO; 
 			}
 
 {float}		{ 
 				fprintf(tokens_output, "Encontré un float: %s\n", yytext);
-				yylval.num.ival = atoi(yytext);
+				strcpy(yylval.num.val, yytext);
+				yylval.num.type = 1;
 				return NUMERO; 
 			}
 
 {double}	{ 
 				fprintf(tokens_output, "Encontré un double: %s\n", yytext);
-				yylval.num.ival = atoi(yytext);
+				strcpy(yylval.num.val, yytext);
+				yylval.num.type = 2;
 				return NUMERO;
 			}
 
