@@ -76,16 +76,8 @@ char *newIndex();
   char car;
   char* cadena;
   exp expr;
-  type tipo; 
-  struct{
-    labels falses;
-    labels trues;
-  }booleanos;
-  labels siguientes;
-  struct{
-       labels siguientes;
-       bool ifelse;
-  }siguientesp;  
+  type tipo;
+  labels siguientes;   
  }
 
 %token<car> CAR
@@ -112,9 +104,8 @@ char *newIndex();
 %left ELSE
 %left IFX 
 
-%type<id> parte_izq
 %type<tipo> tipo 
-%type<booleanos> condicion;
+%type<booleanos> condicion
 %type<expr> expresion
 %type<siguientes> sentencia sentencias
 %start programa
@@ -129,8 +120,8 @@ decl : tipo {current_type = $1.type; current_dim = $1.dim;}
        lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
       | %empty {};
 
-tipo:         INT {$$.type = 0; $$.dim = 4;
-              printf("tipo -> int\n");}
+tipo:         INT //{$$.type = 0; $$.dim = 4;
+              {printf("tipo -> int\n");}
             | FLOAT {$$.type =1; $$.dim = 4;
               printf("tipo -> float\n");}
             | DOUBLE {$$.type= 2; $$.dim = 8; 
@@ -140,12 +131,12 @@ tipo:         INT {$$.type = 0; $$.dim = 4;
             | STRUCT LKEY decl RKEY {printf("tipo -> struct { decl }\n");};
 
 lista : lista COM ID arreglo 
-          { sym s;
+         /* { sym s;
             strcpy(s.id, $3);
             s.type = current_type;
             s.dir = dir;
             dir+= current_dim;
-            insert(&tabla_de_simbolos, s);
+            insert(&tabla_de_simbolos, s);*/{
             printf("lista -> lista , id arreglo\n");}
             | ID arreglo 
           { sym s;
@@ -210,7 +201,7 @@ sentencia :  IF LPAR condicion RPAR sentif
                 char i[32];
                 strcpy(i, newIndex());
                 $$ = create_list(i);
-                asignacion($1, $3); 
+                //asignacion($1, $3); 
                 printf("sentencias -> parte_izq = expresion\n");}
             | RETURN expresion PYC
             {printf("sentencias -> return expresion ;\n");}
