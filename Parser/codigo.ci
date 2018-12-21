@@ -1,8 +1,0 @@
-a = 0
-L2:t0 = 1 < 2
-if t0 goto I1
-goto L1
-I1:t1 = a + 3
-a = t1
-goto I3
-L3:

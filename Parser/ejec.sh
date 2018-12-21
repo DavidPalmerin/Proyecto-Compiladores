@@ -2,4 +2,5 @@
 flex lexer.flex 
 bison -d parser.y
 gcc *.c -o gram
-./gram test.txt
+./gram test2.txt
+cat codigo.ci
