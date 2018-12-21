@@ -9,6 +9,7 @@
 
 #include "attributes.h"
 
+
 void yyerror(char *);
 //void yyerror(char*, char*);
 
@@ -17,18 +18,16 @@ extern int yylineno;
 
 %}
 
-%union{
-  struct {
-    char sval;
-  }car;
-  struct {
-    char* sval;
-  }cadena;
-  numero num;   
+%union{   
+  numero num;
+  char id[32];
+  char car;
+  char* cadena;   
  }
 
-%token<car> CAR 
-%token<cadena> ID CADENA
+%token<car> CAR
+%token<id> ID  
+%token<cadena> CADENA
 %token<num> NUMERO  
 %token TRUE FALSE
 %token INT FLOAT DOUBLE VOID STRUCT CHAR
@@ -141,11 +140,11 @@ expresion: expresion MAS expresion
             {printf("expresion -> expresion mod expresion \n");}
             | var_arreglo
             {printf("expresion -> var_arreglo\n");}
-            | CAR {printf("expresion -> car %c\n", $1.sval);}
-            | CADENA {printf("expresion -> cadena %s\n", $1.sval);}
+            | CAR {printf("expresion -> car %c\n", $1);}
+            | CADENA {printf("expresion -> cadena %s\n", $1);}
             | NUMERO {printf("expresion -> num %s\n", $1.val);}
             | ID LPAR parametros RPAR 
-            {printf("expresion -> id %s ( parametros )\n", $1.sval);};
+            {printf("expresion -> id %s ( parametros )\n", $1);};
 
 parametros: lista_param {printf("parametros-> lista_param\n");}
             | %empty {};

@@ -2,9 +2,9 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	//#include "tokens.h"
-	#include "parser.tab.h"
-	#include "attributes.h"
 
+	#include "attributes.h"
+	#include "parser.tab.h"		
 	/* Variables para analizador léxico. */
 	int pos;
 	
@@ -21,7 +21,7 @@
 %x q_comment_linea
 %x q_comment_mult
 
-id      [_a-zA-Z][_a-zA-Z0-9]*
+id      [_a-zA-Z][_a-zA-Z0-9]{0,30}
 digito 	[0-9]
 int    	[\-+]?[0-9]+
 char    \'[a-zA-Z]\'
@@ -269,13 +269,13 @@ espacio [ \t]
 
 {id}		{
 				fprintf(tokens_output, "Encontré un id: %s\n", yytext);
-				yylval.cadena.sval = yytext;
+				strcpy(yylval.id, yytext);
 				return ID;
 			}
 
 {char}		{ 
 				fprintf(tokens_output, "Encontré un char: %s\n", yytext);
-				yylval.car.sval = yytext[0];
+				yylval.car = yytext[0];
 				return CAR;
 			}
 
@@ -302,7 +302,7 @@ espacio [ \t]
 
 {cadena}	{ 
 				fprintf(tokens_output, "Encontré una cadena: %s\n", yytext);
-				yylval.cadena.sval = yytext;
+				yylval.cadena = yytext;
 				return CADENA;
 			}
 

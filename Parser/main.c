@@ -28,19 +28,6 @@ extern FILE *errores_lexicos;
 extern FILE *comentarios;
 
 
-/*
- * 
- 
-int main(int argc, char** argv) {
-    //printf("abriendo el archivo\n");
-    yyin = fopen("test.txt","r");
-    //printf("abriendo el archivo\n");
-    yyparse();
-    fclose(yyin);
-    return (EXIT_SUCCESS);
-}
-
-*/
 int main(int argc, char **argv) {
   if(argc < 2)	return -1;
   f= fopen(argv[1], "r");

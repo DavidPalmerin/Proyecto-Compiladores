@@ -21,12 +21,12 @@ extern "C" {
         char dir[32];
         int type;
     } exp;
-
+    
     typedef struct _numero{
         int type;
         char val[32];
-    } numero;
-
+    }numero;
+    
     typedef struct _labels{
         char label[1000][32];
         int count;
