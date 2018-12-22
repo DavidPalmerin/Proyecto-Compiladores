@@ -7,20 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "attributes.h"
-#include "symtab.h"
-#include "backpatch.h"
 #include "intermediate_code.h"
-#include <stdbool.h>
-#include <string.h>
+#include "backpatch.h"
+#include "symtab.h"
 
 extern int yylex();
 extern int yylineno;
 
-// Manejo de errores
-void yyerror(char *);
+/* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
+void yyerror(char *);
 
 /* Variable para el conteo de direcciones */
 int dir=0;
@@ -74,18 +71,10 @@ char *newIndex();
   numero num;
   char id[32];
   char car;
-  char* cadena;
-  exp expr;
-  type tipo; 
-  struct{
-    labels falses;
-    labels trues;
-  }booleanos;
+  char* cadena;   
+  type tipo;
   labels siguientes;
-  struct{
-       labels siguientes;
-       bool ifelse;
-  }siguientesp;  
+  bools booleanos;
  }
 
 %token<car> CAR
@@ -112,49 +101,30 @@ char *newIndex();
 %left ELSE
 %left IFX 
 
-%type<id> parte_izq
-%type<tipo> tipo 
-%type<booleanos> condicion;
-%type<expr> expresion
+
+%type<tipo> tipo
+%type<booleanos> condicion
 %type<siguientes> sentencia sentencias
+%type<expresion> expresion
+%type<rel> relacional
 %start programa
 
 %%
 
-programa: {init();} decl 
-          {print_table(&tabla_de_simbolos);}
-          funciones {printf("programa -> decl funciones\n");};
+programa: decl funciones {printf("programa -> decl funciones\n");};
 
-decl : tipo {current_type = $1.type; current_dim = $1.dim;}
-       lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
-      | %empty {};
+decl : tipo lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
+            | %empty {};
 
-tipo:         INT {$$.type = 0; $$.dim = 4;
-              printf("tipo -> int\n");}
-            | FLOAT {$$.type =1; $$.dim = 4;
-              printf("tipo -> float\n");}
-            | DOUBLE {$$.type= 2; $$.dim = 8; 
-              printf("tipo -> double\n");}
+tipo:         INT {printf("tipo -> int\n");}
+            | FLOAT {printf("tipo -> float\n");}
+            | DOUBLE {printf("tipo -> double\n");}
             | CHAR {printf("tipo -> char\n");}
             | VOID {printf("tipo -> void\n");}
             | STRUCT LKEY decl RKEY {printf("tipo -> struct { decl }\n");};
 
-lista : lista COM ID arreglo 
-          { sym s;
-            strcpy(s.id, $3);
-            s.type = current_type;
-            s.dir = dir;
-            dir+= current_dim;
-            insert(&tabla_de_simbolos, s);
-            printf("lista -> lista , id arreglo\n");}
-            | ID arreglo 
-          { sym s;
-            strcpy(s.id, $1);
-            s.type = current_type;
-            s.dir = dir;
-            dir+= current_dim;
-            insert(&tabla_de_simbolos, s);
-            printf("lista- >id arreglo\n");};
+lista : lista COM ID arreglo {printf("lista -> lista , id arreglo\n");}
+            | ID arreglo {printf("lista- >id arreglo\n");};
 
 arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
             | %empty {};
@@ -172,27 +142,8 @@ parte_arr : LCOR RCOR parte_arr
             {printf("parte_arr -> [] parte_arr\n");}
             | %empty {};
 
-sentencias : sentencias { 
-            cuadrupla c;
-            c.op = LB;
-            strcpy(c.op1, "");
-            strcpy(c.op2, "");
-            strcpy(c.res, get_first(&$1));
-            insert_cuad(&codigo_intermedio, c);} 
-            sentencia 
-            {
-                char label[32];
-                strcpy(label,newLabel());
-                $$ = $3;                
-                backpatch(&$1, label, &codigo_intermedio);
-                printf("sentencias -> sentencias sentencia\n");  
-            }
-            | sentencia {
-                char label[32];
-                strcpy(label, newLabel());
-                $$ = $1;
-                backpatch(&$1, label, &codigo_intermedio);
-                printf("sentencias -> sentencia\n");};
+sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
+            | sentencia {printf("sentencias -> sentencia\n");};
 
 sentif : sentencias ELSE sentencias
         {printf("sentif -> else sentencias\n");}
@@ -206,12 +157,8 @@ sentencia :  IF LPAR condicion RPAR sentif
             {printf("sentencias -> do sentencias while ( condicion) ;\n"); } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
             {printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");}
-            | parte_izq ASIG expresion PYC {
-                char i[32];
-                strcpy(i, newIndex());
-                $$ = create_list(i);
-                asignacion($1, $3); 
-                printf("sentencias -> parte_izq = expresion\n");}
+            | parte_izq ASIG expresion PYC
+            {printf("sentencias -> parte_izq = expresion\n");}
             | RETURN expresion PYC
             {printf("sentencias -> return expresion ;\n");}
             | RETURN PYC
@@ -240,17 +187,13 @@ var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n
             | var_arreglo LCOR expresion RCOR {printf("var_arreglo -> var arreglo [ expresion ]\n");};
 
 expresion: expresion MAS expresion 
-            {$$ =suma($1, $3); 
-              printf("expresion -> expresion + expresion \n");}
+            {printf("expresion -> expresion + expresion \n");}
             | expresion MENOS expresion 
-            {$$ =resta($1, $3);
-             printf("expresion -> expresion - expresion \n");}
+            {printf("expresion -> expresion - expresion \n");}
             | expresion MUL expresion
-            {$$ = multiplicacion($1, $3);
-              printf("expresion -> expresion * expresion \n");}
+            {printf("expresion -> expresion * expresion \n");}
             | expresion DIV expresion
-            {$$ =division($1, $3);
-             printf("expresion -> expresion / expresion \n");}
+            {printf("expresion -> expresion / expresion \n");}
             | expresion MOD expresion
             {printf("expresion -> expresion mod expresion \n");}
             | var_arreglo
@@ -276,7 +219,8 @@ condicion: condicion OR condicion
             {printf("condicion -> ! condicion \n");}
             | LPAR condicion RPAR 
             {printf("condicion -> ( condicion ) \n");}
-            | expresion relacional expresion               {printf("condicion -> expresion rel expresion \n");}
+            | expresion relacional expresion
+            {printf("condicion -> expresion rel expresion \n");}
             | TRUE {printf("condicion -> true \n");}
             | FALSE {printf("condicion -> false\n");}; 
 
@@ -287,254 +231,10 @@ relacional: MAYOR {printf("rel-> >\n");}
           | DIF {printf("rel->  !=\n");}
           | IGUAL {printf("rel->  ==\n");};
 %%
-
 void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
 }
 
-
-void yyerror2(char *c, char *c2){
-    strcat(c, c2);
-    yyerror(c);
-}
-
-void init(){    
-    create_table(&tabla_de_simbolos);
-    create_code(&codigo_intermedio);
-    create_labels(&lfalses);    
-}
-
-void finish(){    
-    print_code(&codigo_intermedio);    
-}
-
-exp suma(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = MA;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-    }
-    return e;    
-}
-
-exp resta(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    char t[32];
-    e.type = max(e1.type, e2.type);
-    
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = MEN;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-    }
-    return e;    
-}
-
-exp multiplicacion(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = ML;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-    }
-    return e;    
-}
-
-exp division(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = DV;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-    }
-    return e;    
-}
-
-exp asignacion(char *id, exp e){
-    exp e1;
-    int tipo = get_type(&tabla_de_simbolos, id);
-    if( tipo != -1){        
-        e1.type = e.type;
-        strcpy(e1.dir, id);
-        cuadrupla c;
-        c.op = AS;
-        strcpy(c.op1, reducir(e.dir, tipo, e.type));
-        strcpy(c.op2, "");
-        strcpy(c.res, id);
-        insert_cuad(&codigo_intermedio, c);  
-        
-    }else{
-        yyerror("El identificador no fue declarado\n");
-    }
-    return e1;
-}
-
-
-exp get_numero(numero n){
-    exp e;
-    e.type = n.type;
-    strcpy(e.dir, n.val);
-    return e;
-}
-
-exp identificador(char *id){
-    exp e;
-    if(search(&tabla_de_simbolos, id)!=-1){
-        e.type = get_type(&tabla_de_simbolos, id);
-        strcpy(e.dir, id);
-    }else{
-        yyerror("Error semantico: el identificador no existe");
-    }
-    return e;
-}
-
-
-int max(int t1, int t2){
-    if( t1==t2) return t1;
-    if( t1 ==0 && t2 == 1) return 1;
-    if( t1 ==1 && t2 == 0) return 1;    
-    if( t1 ==0 && t2 == 2) return 2;
-    if( t1 ==2 && t2 == 0) return 2;
-    if( t1 ==2 && t2 == 1) return 2;
-    if( t1 ==1 && t2 == 2) return 2;
-    else return -1;
-}
-
-char *ampliar(char *dir, int t1, int t2){
-    cuadrupla c;
-    char *t= (char*) malloc(32*sizeof(char));
-    
-    if( t1==t2) return dir;
-    if( t1 ==0 && t2 == 1){
-        c.op = EQ;
-        strcpy(c.op1, "(float)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }        
-    if( t1 ==0 && t2 == 2){
-        c.op = EQ;
-        strcpy(c.op1, "(double)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }        
-    
-    if( t1 ==1 && t2 == 2) {
-        c.op = EQ;
-        strcpy(c.op1, "(double)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }            
-}
-
-
-char *reducir(char *dir, int t1, int t2){
-    cuadrupla c;
-    char *t= (char*) malloc(32*sizeof(char));
-    
-    if( t1==t2) return dir;
-    if( t1 ==0 && t2 == 1){
-        c.op = EQ;
-        strcpy(c.op1, "(int)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Pérdida de información se esta asignando un float a un int\n");
-        return t;
-    }        
-    if( t1 ==0 && t2 == 2){
-        c.op = EQ;
-        strcpy(c.op1, "(int)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Pérdida de información se esta asignando un double a un int\n");
-        return t;
-    }        
-    
-    if( t1 ==1 && t2 == 2) {
-        c.op = EQ;
-        strcpy(c.op1, "(float)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Perdida de información se esta asignando un double a un float\n");
-        return t;
-    }            
-}
-
-char* newTemp(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "t");
-    char num[30];
-    sprintf(num, "%d", temp);
-    strcat(temporal, num);
-    temp++;
-    return temporal;
-}
-
-char* newLabel(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "L");
-    char num[30];
-    sprintf(num, "%d", label);
-    strcat(temporal, num);
-    label++;
-    return temporal;
-}
-
-
-char* newIndex(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "I");
-    char num[30];
-    sprintf(num, "%d", indice);
-    strcat(temporal, num);
-    indice++;
-    return temporal;
-}
 
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
