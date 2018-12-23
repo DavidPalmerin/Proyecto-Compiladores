@@ -1,8 +1,18 @@
-int a,b;
-func int foo(int k, int l)
+int a,x,y,z;
+double b;
+int carry;
+char c;
+int pol;
+struct{
+	int a;
+	double b;
+	char c;
+}numero;
+int l;
+/*func int foo(int k, int l)
 {
 	a= 1;
 	b = 4;
-}
+}*/
 
 

@@ -6,11 +6,15 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
 
 #include "attributes.h"
 #include "intermediate_code.h"
 #include "backpatch.h"
 #include "symtab.h"
+#include "stack.h"
 
 extern int yylex();
 extern int yylineno;
@@ -26,6 +30,10 @@ int dir=0;
 int current_type;
 int current_dim;
 
+/* Variable para iniciar el conteo de dimensiones en un struct*/
+bool struct_decl = false;
+int  struct_dim = 0;
+
 /* Varaibles para contar las temporales, etiquetas e indices */
 int label;
 int temp;
@@ -34,9 +42,8 @@ int indice;
 /* Variable para el unico atributo heredado de sentencia prima*/
 labels lfalses;
 
-
 /* Variable para la tabla de símbolos*/
-symtab tabla_de_simbolos;
+// symtab tabla_de_simbolos;
 
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
@@ -45,6 +52,9 @@ ic codigo_intermedio;
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
 void finish();
+
+/* Pila de tablas de símbolos para cada contexto. */
+stack envs;
 
 exp suma(exp e1, exp e2);
 exp resta(exp e1, exp e2);
@@ -68,14 +78,13 @@ char *newIndex();
 %}
 
 %union{   
-  numero num;
-  char id[32];
-  char car;
-  char* cadena;   
-  type tipo;
-  labels siguientes;
-  bools booleanos;
- }
+    char   id[32];
+    char   car;
+    char*  cadena;   
+    exp    expresion;
+    type   tipo;
+    numero num;
+}
 
 %token<car> CAR
 %token<id> ID  
@@ -89,6 +98,7 @@ char *newIndex();
 %token BREAK CASE DEFAULT
 %token PRINT
 %token NL
+%token LKEY RKEY
 
 %right ASIG
 %left OR AND
@@ -103,28 +113,119 @@ char *newIndex();
 
 
 %type<tipo> tipo
-%type<booleanos> condicion
 %type<siguientes> sentencia sentencias
 %type<expresion> expresion
-%type<rel> relacional
+%type<bools> condicion
+
+
 %start programa
 
 %%
 
-programa: decl funciones {printf("programa -> decl funciones\n");};
+programa:   { init(); }
+            decl 
+            funciones   {
+                            symtab current;
+                            stack_peek(&envs, &current);
+                            print_table(&current);    
+                            printf("programa -> decl funciones\n");
+                        };
 
-decl : tipo lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
+decl :      tipo    {current_type = $1.type; current_dim  = $1.dim;}      
+            lista PYC decl {
+                                printf("decl -> tipo lista PYC decl\n");
+                            }
             | %empty {};
 
-tipo:         INT {printf("tipo -> int\n");}
-            | FLOAT {printf("tipo -> float\n");}
-            | DOUBLE {printf("tipo -> double\n");}
-            | CHAR {printf("tipo -> char\n");}
-            | VOID {printf("tipo -> void\n");}
-            | STRUCT LKEY decl RKEY {printf("tipo -> struct { decl }\n");};
+tipo:        VOID   {    
+                        $$.type = 0;
+                        $$.dim  = 0;
+                        printf("tipo -> VOID\n");
+                    }
+            | CHAR {
+                        $$.type = 1;
+                        $$.dim  = 1;
+                        printf("tipo -> CHAR\n");
+                    }
+            | INT   {
+                        $$.type = 2;
+                        $$.dim = 4;
+                        printf("tipo -> INT\n");
+                    }
+            | FLOAT {
+                        $$.type = 3;
+                        $$.dim = 4;
+                        printf("tipo -> FLOAT\n");
+                    }
+            | DOUBLE{
+                        $$.type = 4;
+                        $$.dim = 8;
+                        printf("tipo -> DOUBLE\n");
+                    }
+            | STRUCT{
+                        struct_decl = true;
+                        /* Creo que la dimensión es la suma de las dimensiones de las declaraciones que contiene. Entonces su dim se asigna al final de RKEY. */
+                    }
+                LKEY decl RKEY {
+                                    $$.type = 5;
+                                    $$.dim  = struct_dim;     
+                                    printf("tipo -> struct { decl }\n");
+                                };
 
-lista : lista COM ID arreglo {printf("lista -> lista , id arreglo\n");}
-            | ID arreglo {printf("lista- >id arreglo\n");};
+lista :     lista 
+            COM 
+            ID  {
+                    if (current_type == 5)
+                    {
+                        yyerror("[ERROR] Struct solo puede tener un identificador.");
+                        return 1;
+                    }                    
+
+                    sym symbol;
+                    strcpy(symbol.id, $3);
+                    symbol.type = current_type;
+                    symbol.dir  = dir;
+                    dir += current_dim;
+                    symtab curr_sym_tab;
+                    stack_pop(&envs, &curr_sym_tab);
+                    insert(&curr_sym_tab, symbol);
+                    stack_push(&envs, &curr_sym_tab);
+                    if (struct_decl)
+                        struct_dim += current_dim;
+                } 
+            arreglo {printf("lista -> lista , id arreglo\n");}
+            
+            | ID {
+                    sym symbol;
+                    strcpy(symbol.id, $1);
+                    symbol.type = current_type;
+                    symbol.dir  = dir;
+                    
+                    if (current_type != 5)
+                    {
+                        if (!struct_decl)
+                            dir += current_dim;
+                        symtab curr_sym_tab;
+                        stack_pop(&envs, &curr_sym_tab);
+                        insert(&curr_sym_tab, symbol);
+                        stack_push(&envs, &curr_sym_tab);
+                        if (struct_decl)
+                            struct_dim += current_dim;
+                    } 
+                    else
+                    {
+                        /* Actualización de variables de struct. */
+                        struct_decl = false;
+                        struct_dim  = 0;
+                        dir += current_dim;
+                        symtab curr_sym_tab;
+                        stack_pop(&envs, &curr_sym_tab);
+                        insert(&curr_sym_tab, symbol);
+                        stack_push(&envs, &curr_sym_tab);
+                    }
+
+                } 
+              arreglo {printf("lista- >id arreglo\n");};
 
 arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
             | %empty {};
@@ -233,6 +334,15 @@ relacional: MAYOR {printf("rel-> >\n");}
 %%
 void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
+}
+
+void init()
+{
+    create_code(&codigo_intermedio);
+    stack_new(&envs, sizeof(symtab), NULL);
+    symtab sym_tab;
+    create_table(&sym_tab);
+    stack_push(&envs, &sym_tab);
 }
 
 

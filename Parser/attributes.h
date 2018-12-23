@@ -26,17 +26,17 @@ extern "C" {
         int type;
         char val[32];
     } numero;
-    
+
     typedef struct _labels{
         char label[1000][32];
         int count;
     } labels;
 
-    typedef struct _bools{
-        labels trues;
-        labels falses;
-    } bools;
-    
+    // typedef struct _bools{
+    //     labels trues;
+    //     labels falses;
+    // } bools;
+
     char *pop_label(labels*);
     void push_label(labels*, char *l);
     
@@ -54,4 +54,5 @@ extern "C" {
 #endif
 
 #endif /* ATTRIBUTES_H */
+
 
