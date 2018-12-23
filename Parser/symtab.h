@@ -23,6 +23,7 @@ extern "C" {
     typedef struct _symtab{
         sym symbols[1000];
         int count;
+        int last_dir;
     } symtab;
     
     int search(symtab *, char*);

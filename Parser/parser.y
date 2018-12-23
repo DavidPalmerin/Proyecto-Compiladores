@@ -52,6 +52,9 @@ ic codigo_intermedio;
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
 void finish();
+void add_context();
+void del_context(bool context);
+bool exists_id(char id[32]);
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -162,19 +165,27 @@ tipo:        VOID   {
                         $$.dim = 8;
                         printf("tipo -> DOUBLE\n");
                     }
-            | STRUCT{
+            | STRUCT{   
                         struct_decl = true;
-                        /* Creo que la dimensión es la suma de las dimensiones de las declaraciones que contiene. Entonces su dim se asigna al final de RKEY. */
+                        add_context();
                     }
                 LKEY decl RKEY {
                                     $$.type = 5;
                                     $$.dim  = struct_dim;     
                                     printf("tipo -> struct { decl }\n");
+                                    del_context(true);
                                 };
 
 lista :     lista 
             COM 
             ID  {
+                    if (exists_id($3))
+                    {
+                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
+                        return 1;
+                    }                
+
+
                     if (current_type == 5)
                     {
                         yyerror("[ERROR] Struct solo puede tener un identificador.");
@@ -196,6 +207,12 @@ lista :     lista
             arreglo {printf("lista -> lista , id arreglo\n");}
             
             | ID {
+                    if (exists_id($1))
+                    {
+                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
+                        return 1;
+                    }                
+
                     sym symbol;
                     strcpy(symbol.id, $1);
                     symbol.type = current_type;
@@ -203,8 +220,7 @@ lista :     lista
                     
                     if (current_type != 5)
                     {
-                        if (!struct_decl)
-                            dir += current_dim;
+                        dir += current_dim;
                         symtab curr_sym_tab;
                         stack_pop(&envs, &curr_sym_tab);
                         insert(&curr_sym_tab, symbol);
@@ -332,8 +348,13 @@ relacional: MAYOR {printf("rel-> >\n");}
           | DIF {printf("rel->  !=\n");}
           | IGUAL {printf("rel->  ==\n");};
 %%
+
 void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
+}
+
+void yyerror2(char *s, char *n){
+    printf("%s %s: en la línea %d\n",s, n, yylineno);
 }
 
 void init()
@@ -345,6 +366,48 @@ void init()
     stack_push(&envs, &sym_tab);
 }
 
+void add_context()
+{
+    symtab curr_symtab;
+    stack_pop(&envs, &curr_symtab);
+    curr_symtab.last_dir = dir;
+    stack_push(&envs, &curr_symtab);
+
+    symtab new_symtab;
+    create_table(&new_symtab);
+    stack_push(&envs, &new_symtab);
+    dir = 0;
+}
+
+void del_context(bool print_context)
+{
+    symtab top_symtab;
+    stack_pop(&envs, &top_symtab);
+    if (print_context)
+    {
+        printf("\n~ Tabla de Símbolos:\n");
+        print_table(&top_symtab);
+    }
+
+    if (stack_size(&envs) > 0)
+    {   
+        stack_peek(&envs, &top_symtab);
+        dir = top_symtab.last_dir;
+    }
+}
+
+bool exists_id(char id[32])
+{
+    symtab curr_symtab;
+    stack_peek(&envs, &curr_symtab);
+    int i;
+    for (i = 0; i < curr_symtab.count; i++)
+    {   
+        if (strcmp(curr_symtab.symbols[i].id, id) == 0)
+            return true;
+    }
+    return false;
+}
 
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}

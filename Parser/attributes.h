@@ -11,7 +11,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
     typedef struct _type{
         int type;
         int dim;
