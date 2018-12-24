@@ -3,6 +3,7 @@ double b;
 int carry;
 char c;
 int pol;
+int array[10][4][3];
 struct{
 	struct {
 		int rk;
@@ -18,6 +19,7 @@ int los;
 char tre;
 double pls;
 int rew;
+char array_C[15][3];
 func int foo(int k, int l)
 {
 	int kes;

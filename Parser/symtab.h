@@ -6,6 +6,9 @@
  */
 #include <stdio.h>
 
+#include "attributes.h"
+#include "stack.h"
+
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
@@ -15,7 +18,7 @@ extern "C" {
 
     struct _symbol{
         char id[32];
-        int type;
+        type type;
         int dir;
     };
     
@@ -28,14 +31,21 @@ extern "C" {
         void *parent;
     } symtab;
     
+    typedef struct _env
+    {
+        symtab symbols;
+        stack exprs;
+    } env;
+
     int search(symtab *, char*);
     int depth_search(symtab *st, char *id);
     int insert(symtab*, sym );
     void print_table(symtab*);
     void fprint_table(symtab* st, FILE *file);
     int get_dir(symtab*, char*);
-    int get_type(symtab*, char *);
     void create_table(symtab *st, void *parent);
+    type get_type(symtab*, char *);
+
     
 
 
