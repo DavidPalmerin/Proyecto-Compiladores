@@ -4,10 +4,6 @@ int carry;
 char c;
 int pol;
 struct{
-	struct {
-		int m;
-		double k;
-	}lol;
 	int a;
 	double b;
 	char c;

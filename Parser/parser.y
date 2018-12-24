@@ -128,9 +128,10 @@ char *newIndex();
 programa:   { init(); }
             decl 
             funciones   {
-                            symtab current;
-                            stack_peek(&envs, &current);
-                            print_table(&current);    
+                            env curr_env;
+                            stack_peek(&envs, &curr_env);
+
+                            print_table(&curr_env.symbols);    
                             printf("programa -> decl funciones\n");
                         };
 
@@ -197,10 +198,11 @@ lista :     lista
                     symbol.type = current_type;
                     symbol.dir  = dir;
                     dir += current_dim;
-                    symtab curr_sym_tab;
-                    stack_pop(&envs, &curr_sym_tab);
-                    insert(&curr_sym_tab, symbol);
-                    stack_push(&envs, &curr_sym_tab);
+                    
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
                     if (struct_decl)
                         struct_dim += current_dim;
                 } 
@@ -221,10 +223,10 @@ lista :     lista
                     if (current_type != 5)
                     {
                         dir += current_dim;
-                        symtab curr_sym_tab;
-                        stack_pop(&envs, &curr_sym_tab);
-                        insert(&curr_sym_tab, symbol);
-                        stack_push(&envs, &curr_sym_tab);
+                        env curr_env;
+                        stack_pop(&envs, &curr_env);
+                        insert(&curr_env.symbols, symbol);
+                        stack_push(&envs, &curr_env);
                         if (struct_decl)
                             struct_dim += current_dim;
                     } 
@@ -234,10 +236,10 @@ lista :     lista
                         struct_decl = false;
                         struct_dim  = 0;
                         dir += current_dim;
-                        symtab curr_sym_tab;
-                        stack_pop(&envs, &curr_sym_tab);
-                        insert(&curr_sym_tab, symbol);
-                        stack_push(&envs, &curr_sym_tab);
+                        env curr_env;
+                        stack_pop(&envs, &curr_env);
+                        insert(&curr_env.symbols, symbol);
+                        stack_push(&envs, &curr_env);
                     }
 
                 } 
@@ -360,46 +362,69 @@ void yyerror2(char *s, char *n){
 void init()
 {
     create_code(&codigo_intermedio);
+
     stack_new(&envs, sizeof(symtab), NULL);
+    
     symtab sym_tab;
     create_table(&sym_tab);
-    stack_push(&envs, &sym_tab);
+
+    stack exprs;
+    stack_new(&exprs, 32 * sizeof(char), NULL);
+
+    env initial_env;
+    initial_env.symbols = sym_tab;
+    initial_env.exprs   = exprs;
+
+    stack_push(&envs, &initial_env);
 }
 
 void add_context()
 {
-    symtab curr_symtab;
-    stack_pop(&envs, &curr_symtab);
-    curr_symtab.last_dir = dir;
-    stack_push(&envs, &curr_symtab);
+    /* Guardamos la última dirección usada en el ambiente actual. */
+    env curr_env;
+    stack_pop(&envs, &curr_env);
+    curr_env.symbols.last_dir = dir;
+    stack_push(&envs, &curr_env);
 
+    /* Nueva tabla de símbolos. */
     symtab new_symtab;
     create_table(&new_symtab);
-    stack_push(&envs, &new_symtab);
+
+    /* Nueva pila para expresiones. */
+    stack exprs;
+    stack_new(&exprs, 32 * sizeof(char), NULL);
+
+    /* Finalmente, creamos el nuevo ambiente. */
+    env my_env;
+    my_env.symbols = new_symtab;
+    my_env.exprs = exprs;
+
+    stack_push(&envs, &my_env);
     dir = 0;
 }
 
 void del_context(bool print_context)
 {
-    symtab top_symtab;
-    stack_pop(&envs, &top_symtab);
+    env curr_env;
+    stack_pop(&envs, &curr_env);
     if (print_context)
     {
         printf("\n~ Tabla de Símbolos:\n");
-        print_table(&top_symtab);
+        print_table(&curr_env.symbols);
     }
 
     if (stack_size(&envs) > 0)
     {   
-        stack_peek(&envs, &top_symtab);
-        dir = top_symtab.last_dir;
+        stack_peek(&envs, &curr_env);
+        dir = curr_env.symbols.last_dir;
     }
 }
 
 bool exists_id(char id[32])
 {
-    symtab curr_symtab;
-    stack_peek(&envs, &curr_symtab);
+    env curr_env;
+    stack_peek(&envs, &curr_env);
+    symtab curr_symtab = curr_env.symbols;
     int i;
     for (i = 0; i < curr_symtab.count; i++)
     {   

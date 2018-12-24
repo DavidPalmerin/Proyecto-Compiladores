@@ -5,6 +5,9 @@
  * Created on 3 de diciembre de 2018, 19:59
  */
 
+#include "symtab.h"
+#include "stack.h"
+
 #ifndef ATTRIBUTES_H
 #define ATTRIBUTES_H
 
@@ -31,6 +34,12 @@ extern "C" {
         char label[1000][32];
         int count;
     } labels;
+
+    typedef struct _env
+    {
+        symtab symbols;
+        stack exprs;
+    } env;
 
     // typedef struct _bools{
     //     labels trues;
