@@ -1,0 +1,9 @@
+a = l
+b = 4
+tre = 'A'
+t0 = a + rew
+t1 = t0 + 3
+t2 = t1 + x
+t3 = t2 + y
+t4 = t3 + z
+b = t4

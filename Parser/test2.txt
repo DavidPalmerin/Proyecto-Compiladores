@@ -18,20 +18,12 @@ int l;
 char tre;
 double pls;
 int rew;
-<<<<<<< HEAD
 func int foo(int k, int l)
-=======
-/*func int foo(int k, int l)
->>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 {
 	a= l();
 	b = 4;
-<<<<<<< HEAD
 	tre = 'A';
 	b = a() + rew() + 3 + x() + y() + z();
 }
-=======
-}*/
->>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 
 
