@@ -5,8 +5,8 @@ char c;
 int pol;
 struct{
 	struct {
-		int k;
-		int l;
+		int rk;
+		int lll;
 		char por;
 	} lol;
 	int a;
@@ -14,16 +14,30 @@ struct{
 	char c;
 	double pyc;
 }numero;
-int l;
+int los;
 char tre;
 double pls;
 int rew;
 func int foo(int k, int l)
 {
-	a= l();
+	int kes;
+	double ples;
+	char totr;
+	int ewerw;
+	kes = a();
+	a= pls();
 	b = 4;
 	tre = 'A';
 	b = a() + rew() + 3 + x() + y() + z();
 }
 
+func int _foo()
+{
+	int pro;
+	pro =2;
+}
 
+func int main()
+{
+	a = 3 + 3;
+}

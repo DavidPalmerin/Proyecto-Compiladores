@@ -19,6 +19,9 @@
 extern int yylex();
 extern int yylineno;
 
+/* Ouput files */
+FILE *contexts;
+
 /* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
 void yyerror(char *);
@@ -34,6 +37,11 @@ int current_dim;
 bool struct_decl = false;
 int  struct_dim = 0;
 
+/* Variable para indicar el conteo de dimensiones de una función */
+int func_dim = 0;
+bool func_decl = false;
+
+
 /* Varaibles para contar las temporales, etiquetas e indices */
 int label;
 int temp;
@@ -43,7 +51,7 @@ int indice;
 labels lfalses;
 
 /* Variable para la tabla de símbolos*/
-// symtab tabla_de_simbolos;
+symtab global_symbols;
 
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
@@ -52,8 +60,10 @@ ic codigo_intermedio;
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
 void finish();
-void add_context();
+void add_context(bool func_context);
 void del_context(bool context);
+bool exists_main();
+void print_context(char *s1, char *s2);
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -126,14 +136,16 @@ char *newIndex();
 
 %%
 
-programa:   { init(); }
+programa:       { init(); }
             decl 
+                { 
+                    /* Guardamos la tabla más global. */
+                    stack_peek(&envs, &global_symbols);
+                }
             funciones   {
-                            env curr_env;
-                            stack_peek(&envs, &curr_env);
-
-                            print_table(&curr_env.symbols);    
+                            print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
+                            
                             finish();
                         };
 
@@ -173,13 +185,13 @@ tipo:        VOID   {
                     }
             | STRUCT{   
                         struct_decl = true;
-                        add_context();
+                        add_context(false);
                     }
                 LKEY decl RKEY {
                                     $$.type = 5;
                                     $$.dim  = struct_dim;
                                     printf("tipo -> struct { decl }\n");
-                                    del_context(true);
+                                    del_context(false);
                                 };
 
 lista :     lista 
@@ -187,7 +199,7 @@ lista :     lista
             ID  {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $3) != -1)
+                    if (depth_search(&curr_env.symbols, $3) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
                         return 1;
@@ -217,7 +229,7 @@ lista :     lista
             | ID {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $1) != -1)
+                    if (depth_search(&curr_env.symbols, $1) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
                         return 1;
@@ -240,14 +252,81 @@ lista :     lista
 arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
             | %empty {};
 
-funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
+funciones : FUNC 
+            tipo ID LPAR
+                {
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (search(&curr_env.symbols, $3) != -1)
+                    {
+                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $3);
+                        return 1;
+                    }
+                    add_context(true);
+                    func_decl = true;
+                }
+             argumentos 
+             RPAR LKEY  decl sentencias RKEY 
+                {
+                    print_context("Contexto local de: ", $3);
+
+                    int func_tam = dir;
+                    del_context(false);
+                    
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+
+                    /* Agregamos el nombre de la función al contexto
+                        donde se puede llamar. */
+                    sym symbol;
+                    strcpy(symbol.id, $3);
+                    symbol.type = $2.type;
+                    symbol.dir = dir;
+                    dir += func_tam;
+
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
+
+                    global_symbols = curr_env.symbols;
+                    func_decl = false;
+                }
+             funciones 
+                {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
+            | %empty    {
+                            if (!exists_main())
+                                return 1;
+                        };
+
+argumentos : lista_args 
+                        {
+                            printf("argumentos -> lista_args\n");
+                        }
             | %empty {};
 
-argumentos : lista_args {printf("argumentos -> lista_args\n");}
-            | %empty {};
-
-lista_args : lista_args COM tipo ID parte_arr {printf("lista_args -> lista_args , tipo id parte_arr\n");}
-            | tipo ID parte_arr {printf("lista_args -> tipo id parte_arr\n");}
+lista_args : lista_args COM tipo ID parte_arr 
+                {
+                    /* Verifica si existe el ID en el contexto actual o el padre. */
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (depth_search(&curr_env.symbols, $4) != -1)
+                    {
+                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $4);
+                        return 1;
+                    }
+                    printf("lista_args -> lista_args , tipo id parte_arr\n");
+                }
+            | tipo ID parte_arr 
+                    {
+                        /* Verifica si existe el ID en el contexto actual o el padre. */
+                        env curr_env;
+                        stack_peek(&envs, &curr_env);
+                        if (depth_search(&curr_env.symbols, $2) != -1)
+                        {
+                            yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $2);
+                            return 1;
+                        }
+                        printf("lista_args -> tipo id parte_arr\n");
+                    }
 
 parte_arr : LCOR RCOR parte_arr 
             {printf("parte_arr -> [] parte_arr\n");}
@@ -323,7 +402,7 @@ predeterm : DEFAULT PUNES sentencia
 parte_izq : ID  {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $1) == -1)
+                    if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("[ERROR] No se ha declarado la variable", $1);
                         return 1;
@@ -397,8 +476,18 @@ expresion:   expresion
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
-            | ID LPAR parametros RPAR 
+            | ID     
                 {
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (depth_search(&curr_env.symbols, $1) == -1)
+                    {
+                        yyerror2("[ERROR] No se encontró el identificador", $1);
+                        return 1;
+                    }
+                }                     
+                LPAR parametros RPAR 
+                {   
                     strcpy($$.dir, $1);
                     //Buscar tipo $1.type?
                     printf("expresion -> id %s ( parametros )\n", $1);
@@ -447,7 +536,8 @@ void init()
 
     stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
     symtab sym_tab;
-    create_table(&sym_tab);
+    create_table(&sym_tab, NULL);
+    sym_tab.parent = NULL;
 
     stack exprs;
     stack_new(&exprs, 32 * sizeof(char), NULL);
@@ -464,7 +554,16 @@ void finish()
     print_code(&codigo_intermedio);
 }
 
-void add_context()
+void print_context(char *s1, char *s2)
+{
+    env curr_env;
+    stack_peek(&envs, &curr_env);
+    fprintf(contexts, "~ %s %s\n", s1, s2);
+    fprint_table(&curr_env.symbols, contexts);
+    fprintf(contexts, "\n");
+}
+
+void add_context(bool func_context)
 {
     /* Guardamos la última dirección usada en el ambiente actual. */
     env curr_env;
@@ -474,7 +573,11 @@ void add_context()
 
     /* Nueva tabla de símbolos. */
     symtab new_symtab;
-    create_table(&new_symtab);
+    if (func_context)
+        create_table(&new_symtab, &global_symbols);
+    else
+        create_table(&new_symtab, NULL);
+
 
     /* Nueva pila para expresiones. */
     stack exprs;
@@ -495,7 +598,6 @@ void del_context(bool print_context)
     stack_pop(&envs, &curr_env);
     if (print_context)
     {
-        printf("\n~ Tabla de Símbolos:\n");
         print_table(&curr_env.symbols);
     }
 
@@ -514,6 +616,21 @@ char* newTemp(){
     strcat(temporal, num);
     temp++;
     return temporal;
+}
+
+bool exists_main()
+{
+    int index = global_symbols.count - 1;
+    if (index >= 0)
+    {
+        sym symbol = global_symbols.symbols[index];
+        if (strcmp(symbol.id, "main") != 0)
+        {
+            yyerror("[ERROR] No se encontró la declaración de la función main");
+            return false;
+        }
+    }
+    return true;
 }
 
 /*

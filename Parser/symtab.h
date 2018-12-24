@@ -4,6 +4,7 @@
  *
  * Created on 3 de diciembre de 2018, 19:36
  */
+#include <stdio.h>
 
 #ifndef SYMTAB_H
 #define SYMTAB_H
@@ -24,14 +25,17 @@ extern "C" {
         sym symbols[1000];
         int count;
         int last_dir;
+        void *parent;
     } symtab;
     
     int search(symtab *, char*);
+    int depth_search(symtab *st, char *id);
     int insert(symtab*, sym );
     void print_table(symtab*);
+    void fprint_table(symtab* st, FILE *file);
     int get_dir(symtab*, char*);
     int get_type(symtab*, char *);
-    void create_table(symtab *st);
+    void create_table(symtab *st, void *parent);
     
 
 
