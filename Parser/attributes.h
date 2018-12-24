@@ -19,7 +19,7 @@ extern "C" {
 
     typedef struct _exp{
         char dir[32];
-        int type;
+        type type;
     } exp;
     
     typedef struct _numero{
@@ -31,7 +31,6 @@ extern "C" {
         char label[1000][32];
         int count;
     } labels;
-
 
     // typedef struct _bools{
     //     labels trues;

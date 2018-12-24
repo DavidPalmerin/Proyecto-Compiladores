@@ -19,6 +19,9 @@
 extern int yylex();
 extern int yylineno;
 
+/* Ouput files */
+FILE *contexts;
+
 /* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
 void yyerror(char *);
@@ -34,6 +37,11 @@ int current_dim;
 bool struct_decl = false;
 int  struct_dim = 0;
 
+/* Variable para indicar el conteo de dimensiones de una función */
+int func_dim = 0;
+bool func_decl = false;
+
+
 /* Varaibles para contar las temporales, etiquetas e indices */
 int label;
 int temp;
@@ -43,7 +51,7 @@ int indice;
 labels lfalses;
 
 /* Variable para la tabla de símbolos*/
-// symtab tabla_de_simbolos;
+symtab global_symbols;
 
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
@@ -52,8 +60,10 @@ ic codigo_intermedio;
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
 void finish();
-void add_context();
+void add_context(bool func_context);
 void del_context(bool context);
+bool exists_main();
+void print_context(char *s1, char *s2);
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -67,7 +77,7 @@ exp identificador(char *);
 exp asignacion(char *id, exp e);
 
 /* Funciones auxiliares para la comprobación de tipos */
-int max(int t1, int t2);
+int max_type(int t1, int t2);
 char *ampliar(char *dir, int t1, int t2);
 char *reducir(char *dir, int t1, int t2);
 
@@ -81,7 +91,7 @@ char *newIndex();
 
 %union{   
     char   id[32];
-    char   dir[32];
+    //char   dir[32];
     char*  car;
     char*  cadena;   
     exp    expr;
@@ -116,9 +126,8 @@ char *newIndex();
 
 
 %type<tipo> tipo
-%type<dir> parte_izq
 %type<siguientes> sentencia sentencias
-%type<expr> expresion
+%type<expr> expresion parte_izq
 %type<bools> condicion
 
 
@@ -126,14 +135,16 @@ char *newIndex();
 
 %%
 
-programa:   { init(); }
+programa:       { init(); }
             decl 
+                { 
+                    /* Guardamos la tabla más global. */
+                    stack_peek(&envs, &global_symbols);
+                }
             funciones   {
-                            env curr_env;
-                            stack_peek(&envs, &curr_env);
-
-                            print_table(&curr_env.symbols);    
+                            print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
+                            
                             finish();
                         };
 
@@ -173,21 +184,23 @@ tipo:        VOID   {
                     }
             | STRUCT{   
                         struct_decl = true;
-                        add_context();
+                        add_context(false);
                     }
                 LKEY decl RKEY {
                                     $$.type = 5;
                                     $$.dim  = struct_dim;
                                     printf("tipo -> struct { decl }\n");
-                                    del_context(true);
+                                    del_context(false);
                                 };
 
 lista :     lista 
             COM 
-            ID  {
+            ID  
+            arreglo
+                {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $3) != -1)
+                    if (depth_search(&curr_env.symbols, $3) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
                         return 1;
@@ -203,21 +216,24 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type.type = current_type;
+                    symbol.type.dim = current_dim;
                     symbol.dir  = dir;
                     dir += current_dim;
+                    
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
                     stack_push(&envs, &curr_env);
                     if (struct_decl)
                         struct_dim += current_dim;
-                
-                    printf("lista -> lista , id arreglo\n");
-                }
-
-            | ID {
+                 
+                    printf("lista -> lista , id arreglo\n");}
+            
+            | ID 
+              arreglo
+                {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $1) != -1)
+                    if (depth_search(&curr_env.symbols, $1) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
                         return 1;
@@ -226,31 +242,97 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $1);
                     symbol.type.type = current_type;
-                    symbol.dir  = dir;
                     symbol.type.dim = current_dim;
-                    
+                    symbol.dir  = dir;
+
                     dir += current_dim;
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
                     stack_push(&envs, &curr_env);
                     if (current_type != 5 && struct_decl)
                         struct_dim += current_dim;
-                printf("lista- >id arreglo\n");
-            };
+                    printf("lista- >id arreglo\n");};
 
-arreglo : LCOR NUMERO RCOR arreglo 
-            { current_dim *= atoi($2.val);
+arreglo : LCOR NUMERO RCOR arreglo {
+            current_dim *= atoi($2.val);
             printf("arreglo -> id arreglo\n");}
             | %empty {};
 
-funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
+funciones : FUNC 
+            tipo ID LPAR
+                {
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (search(&curr_env.symbols, $3) != -1)
+                    {
+                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $3);
+                        return 1;
+                    }
+                    add_context(true);
+                    func_decl = true;
+                }
+             argumentos 
+             RPAR LKEY  decl sentencias RKEY 
+                {
+                    print_context("Contexto local de: ", $3);
+
+                    int func_tam = dir;
+                    del_context(false);
+                    
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+
+                    /* Agregamos el nombre de la función al contexto
+                        donde se puede llamar. */
+                    sym symbol;
+                    strcpy(symbol.id, $3);
+                    symbol.type = $2;
+                    symbol.dir = dir;
+                    dir += func_tam;
+
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
+
+                    global_symbols = curr_env.symbols;
+                    func_decl = false;
+                }
+             funciones 
+                {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
+            | %empty    {
+                            if (!exists_main())
+                                return 1;
+                        };
+
+argumentos : lista_args 
+                        {
+                            printf("argumentos -> lista_args\n");
+                        }
             | %empty {};
 
-argumentos : lista_args {printf("argumentos -> lista_args\n");}
-            | %empty {};
-
-lista_args : lista_args COM tipo ID parte_arr {printf("lista_args -> lista_args , tipo id parte_arr\n");}
-            | tipo ID parte_arr {printf("lista_args -> tipo id parte_arr\n");}
+lista_args : lista_args COM tipo ID parte_arr 
+                {
+                    /* Verifica si existe el ID en el contexto actual o el padre. */
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (depth_search(&curr_env.symbols, $4) != -1)
+                    {
+                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $4);
+                        return 1;
+                    }
+                    printf("lista_args -> lista_args , tipo id parte_arr\n");
+                }
+            | tipo ID parte_arr 
+                    {
+                        /* Verifica si existe el ID en el contexto actual o el padre. */
+                        env curr_env;
+                        stack_peek(&envs, &curr_env);
+                        if (depth_search(&curr_env.symbols, $2) != -1)
+                        {
+                            yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $2);
+                            return 1;
+                        }
+                        printf("lista_args -> tipo id parte_arr\n");
+                    }
 
 parte_arr : LCOR RCOR parte_arr 
             {printf("parte_arr -> [] parte_arr\n");}
@@ -280,14 +362,18 @@ sentencia :  IF LPAR condicion RPAR sentif
                     printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
             | parte_izq ASIG expresion PYC
-                {
-                    cuadrupla cuad;
-                    cuad.op  = AS;
-                    strcpy(&cuad.res, $1);
-                    strcpy(&cuad.op1, $3.dir);
-                    insert_cuad(&codigo_intermedio, cuad);
-
-                    printf("sentencias -> parte_izq = expresion\n");
+                {   
+                    int compatible = max_type($1.type.type, $3.type.type);
+                    if(compatible == -1) 
+                        yyerror("Error: No se puede asignar, tipos incompatibles.");
+                    else {
+                        cuadrupla cuad;
+                        cuad.op  = AS;
+                        strcpy(&cuad.res, $1.dir);
+                        strcpy(&cuad.op1, $3.dir);
+                        insert_cuad(&codigo_intermedio, cuad);
+                        printf("sentencias -> parte_izq = expresion\n");
+                    }
                 }
             | RETURN expresion PYC
                 {
@@ -326,12 +412,13 @@ predeterm : DEFAULT PUNES sentencia
 parte_izq : ID  {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if (search(&curr_env.symbols, $1) == -1)
+                    if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("[ERROR] No se ha declarado la variable", $1);
                         return 1;
                     }
-                    strcpy($$, $1);
+                    strcpy($$.dir, $1);
+                    $$.type = get_type(&curr_env.symbols, $1);
                     printf("parte_izq -> id\n");
                 }
             | var_arreglo 
@@ -351,17 +438,19 @@ expresion:   expresion
                 {
                     char *t = (char*) malloc(32 * sizeof(char));
                     strcpy(t, newTemp());
-                    printf("TEMPRAAAAAAL: %s", t);
                     strcpy($$.dir, t);
-                    // Falta el tipooooooooooooooooooooooooo $$.type
-
-                    cuadrupla cuad;
-                    cuad.op = MA;
-                    strcpy(cuad.res, $$.dir);
-                    strcpy(cuad.op1, $1.dir);
-                    strcpy(cuad.op2, $3.dir);
-                    insert_cuad(&codigo_intermedio, cuad);
-                    printf("expresion -> expresion + expresion \n");
+                    int max = max_type($1.type.type,$3.type.type);
+                    if(max==-1) 
+                        yyerror("Error: Tipos incompatibles.");
+                    else{
+                        cuadrupla cuad;
+                        cuad.op = MA;
+                        strcpy(cuad.res, $$.dir);
+                        strcpy(cuad.op1, $1.dir);
+                        strcpy(cuad.op2, $3.dir);
+                        insert_cuad(&codigo_intermedio, cuad);
+                        printf("expresion -> expresion + expresion \n");
+                    }
                 }
             | expresion MENOS expresion 
                 {
@@ -397,12 +486,22 @@ expresion:   expresion
                     printf("expresion -> cadena %s\n", $1);
                 }
             | NUMERO 
-                {
+                {   $$.type.type = $1.type;
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
-            | ID LPAR parametros RPAR 
+            | ID     
                 {
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (depth_search(&curr_env.symbols, $1) == -1)
+                    {
+                        yyerror2("[ERROR] No se encontró el identificador", $1);
+                        return 1;
+                    }
+                }                     
+                LPAR parametros RPAR 
+                {   
                     strcpy($$.dir, $1);
                     //Buscar tipo $1.type?
                     printf("expresion -> id %s ( parametros )\n", $1);
@@ -450,9 +549,9 @@ void init()
     create_code(&codigo_intermedio);
 
     stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
-    
     symtab sym_tab;
-    create_table(&sym_tab);
+    create_table(&sym_tab, NULL);
+    sym_tab.parent = NULL;
 
     stack exprs;
     stack_new(&exprs, 32 * sizeof(char), NULL);
@@ -469,7 +568,16 @@ void finish()
     print_code(&codigo_intermedio);
 }
 
-void add_context()
+void print_context(char *s1, char *s2)
+{
+    env curr_env;
+    stack_peek(&envs, &curr_env);
+    fprintf(contexts, "~ %s %s\n", s1, s2);
+    fprint_table(&curr_env.symbols, contexts);
+    fprintf(contexts, "\n");
+}
+
+void add_context(bool func_context)
 {
     /* Guardamos la última dirección usada en el ambiente actual. */
     env curr_env;
@@ -479,7 +587,11 @@ void add_context()
 
     /* Nueva tabla de símbolos. */
     symtab new_symtab;
-    create_table(&new_symtab);
+    if (func_context)
+        create_table(&new_symtab, &global_symbols);
+    else
+        create_table(&new_symtab, NULL);
+
 
     /* Nueva pila para expresiones. */
     stack exprs;
@@ -500,7 +612,6 @@ void del_context(bool print_context)
     stack_pop(&envs, &curr_env);
     if (print_context)
     {
-        printf("\n~ Tabla de Símbolos:\n");
         print_table(&curr_env.symbols);
     }
 
@@ -519,6 +630,35 @@ char* newTemp(){
     strcat(temporal, num);
     temp++;
     return temporal;
+}
+
+bool exists_main()
+{
+    int index = global_symbols.count - 1;
+    if (index >= 0)
+    {
+        sym symbol = global_symbols.symbols[index];
+        if (strcmp(symbol.id, "main") != 0)
+        {
+            yyerror("[ERROR] No se encontró la declaración de la función main");
+            return false;
+        }
+    }
+    return true;
+}
+
+int max_type(int t1, int t2){
+    if (t1 == t2) return t1;
+    else {
+        /*Si son ambos números. */
+        if (t1 > 1 && t1 < 5 && 
+            t2 > 1 && t2 < 5) 
+            if (t1 < t2) return t2;
+            else return t1;
+        /*Si no son números -> tipos incompatibles.
+         Por ahora no se pude hacer int a char*/    
+        return -1;
+    } 
 }
 
 /*

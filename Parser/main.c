@@ -26,15 +26,22 @@ extern FILE *f;
 extern FILE *tokens_output;
 extern FILE *errores_lexicos;
 extern FILE *comentarios;
+extern FILE *contexts;
 
 
 int main(int argc, char **argv) {
-  if(argc < 2)	return -1;
-  f= fopen(argv[1], "r");
-  if (!f)	return -1;
+  if(argc < 2)	
+    return -1;
+  
+  f = fopen(argv[1], "r");
+  
+  if (!f)	
+    return -1;
+
+  contexts = fopen("contexts.txt", "w");
+  comentarios = fopen("comentarios.txt", "w");
   tokens_output = fopen("tokens_output.txt", "w");
   errores_lexicos = fopen("errores_lexicos.txt", "w");
-  comentarios = fopen("comentarios.txt", "w");
 
   yyin = f;
   yyout = tokens_output;
@@ -50,5 +57,7 @@ int main(int argc, char **argv) {
   fclose(tokens_output);  
   fclose(errores_lexicos);
   fclose(comentarios);
+  fclose(contexts);
+
   return 0;
 }

@@ -4,6 +4,8 @@
  *
  * Created on 3 de diciembre de 2018, 19:36
  */
+#include <stdio.h>
+
 #include "attributes.h"
 #include "stack.h"
 
@@ -13,7 +15,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
     struct _symbol{
         char id[32];
         type type;
@@ -26,20 +28,24 @@ extern "C" {
         sym symbols[1000];
         int count;
         int last_dir;
+        void *parent;
     } symtab;
-
+    
     typedef struct _env
     {
         symtab symbols;
         stack exprs;
     } env;
-    
+
     int search(symtab *, char*);
+    int depth_search(symtab *st, char *id);
     int insert(symtab*, sym );
     void print_table(symtab*);
+    void fprint_table(symtab* st, FILE *file);
     int get_dir(symtab*, char*);
+    void create_table(symtab *st, void *parent);
     type get_type(symtab*, char *);
-    void create_table(symtab *st);
+
     
 
 
