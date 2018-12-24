@@ -135,7 +135,10 @@ programa:   { init(); }
                             printf("programa -> decl funciones\n");
                         };
 
-decl :      tipo    {current_type = $1.type; current_dim  = $1.dim;}      
+decl :      tipo    {   
+                        current_type = $1.type; 
+                        current_dim  = $1.dim;
+                    }      
             lista PYC decl {
                                 printf("decl -> tipo lista PYC decl\n");
                             }
@@ -172,7 +175,7 @@ tipo:        VOID   {
                     }
                 LKEY decl RKEY {
                                     $$.type = 5;
-                                    $$.dim  = struct_dim;     
+                                    $$.dim  = struct_dim;
                                     printf("tipo -> struct { decl }\n");
                                     del_context(true);
                                 };
@@ -220,28 +223,13 @@ lista :     lista
                     symbol.type = current_type;
                     symbol.dir  = dir;
                     
-                    if (current_type != 5)
-                    {
-                        dir += current_dim;
-                        env curr_env;
-                        stack_pop(&envs, &curr_env);
-                        insert(&curr_env.symbols, symbol);
-                        stack_push(&envs, &curr_env);
-                        if (struct_decl)
-                            struct_dim += current_dim;
-                    } 
-                    else
-                    {
-                        /* Actualización de variables de struct. */
-                        struct_decl = false;
-                        struct_dim  = 0;
-                        dir += current_dim;
-                        env curr_env;
-                        stack_pop(&envs, &curr_env);
-                        insert(&curr_env.symbols, symbol);
-                        stack_push(&envs, &curr_env);
-                    }
-
+                    dir += current_dim;
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
+                    if (current_type != 5 && struct_decl)
+                        struct_dim += current_dim;
                 } 
               arreglo {printf("lista- >id arreglo\n");};
 
