@@ -17,9 +17,11 @@ struct{
 int l;
 char tre;
 double pls;
-int rew;
+int req;
 func int foo(int k, int l)
 {
+	//int rew[2][3][4];
+	//char holi[4][8];
 	a= l();
 	b = 4;
 	tre = 'A';

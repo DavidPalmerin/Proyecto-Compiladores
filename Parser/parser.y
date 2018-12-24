@@ -202,18 +202,18 @@ lista :     lista
 
                     sym symbol;
                     strcpy(symbol.id, $3);
-                    symbol.type = current_type;
+                    symbol.type.type = current_type;
                     symbol.dir  = dir;
                     dir += current_dim;
-                    
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
                     stack_push(&envs, &curr_env);
                     if (struct_decl)
                         struct_dim += current_dim;
-                } 
-            arreglo {printf("lista -> lista , id arreglo\n");}
-            
+                
+                    printf("lista -> lista , id arreglo\n");
+                }
+
             | ID {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
@@ -225,8 +225,9 @@ lista :     lista
 
                     sym symbol;
                     strcpy(symbol.id, $1);
-                    symbol.type = current_type;
+                    symbol.type.type = current_type;
                     symbol.dir  = dir;
+                    symbol.type.dim = current_dim;
                     
                     dir += current_dim;
                     stack_pop(&envs, &curr_env);
@@ -234,10 +235,12 @@ lista :     lista
                     stack_push(&envs, &curr_env);
                     if (current_type != 5 && struct_decl)
                         struct_dim += current_dim;
-                } 
-              arreglo {printf("lista- >id arreglo\n");};
+                printf("lista- >id arreglo\n");
+            };
 
-arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
+arreglo : LCOR NUMERO RCOR arreglo 
+            { current_dim *= atoi($2.val);
+            printf("arreglo -> id arreglo\n");}
             | %empty {};
 
 funciones : FUNC tipo ID LPAR argumentos RPAR LKEY  decl sentencias RKEY funciones {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
