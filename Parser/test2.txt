@@ -1,8 +1,27 @@
-int a;
+int a,x,y,z;
+double b;
+int carry;
+char c;
+int pol;
+struct{
+	struct {
+		int k;
+		int l;
+		char por;
+	} lol;
+	int a;
+	double b;
+	char c;
+	double pyc;
+}numero;
+int l;
+char tre;
+double pls;
+int rew;
 /*func int foo(int k, int l)
 {
-//	a= 1;
-        //b=0;
-}
-*/
+	a= 1;
+	b = 4;
+}*/
+
 

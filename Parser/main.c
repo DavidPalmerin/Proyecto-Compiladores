@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
   yyout = tokens_output;
 
   int p = yyparse();
-
+  
   if(p)
     printf("La entrada es rechazada de acuerdo a la gramática.\n");
   else

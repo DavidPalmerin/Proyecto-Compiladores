@@ -5,13 +5,16 @@
  * Created on 3 de diciembre de 2018, 19:59
  */
 
+#include "symtab.h"
+#include "stack.h"
+
 #ifndef ATTRIBUTES_H
 #define ATTRIBUTES_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
     typedef struct _type{
         int type;
         int dim;
@@ -25,13 +28,24 @@ extern "C" {
     typedef struct _numero{
         int type;
         char val[32];
-    }numero;
-    
+    } numero;
+
     typedef struct _labels{
         char label[1000][32];
         int count;
     } labels;
-    
+
+    typedef struct _env
+    {
+        symtab symbols;
+        stack exprs;
+    } env;
+
+    // typedef struct _bools{
+    //     labels trues;
+    //     labels falses;
+    // } bools;
+
     char *pop_label(labels*);
     void push_label(labels*, char *l);
     
@@ -49,4 +63,5 @@ extern "C" {
 #endif
 
 #endif /* ATTRIBUTES_H */
+
 

@@ -6,21 +6,22 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
 
 #include "attributes.h"
-#include "symtab.h"
-#include "backpatch.h"
 #include "intermediate_code.h"
-#include <stdbool.h>
-#include <string.h>
+#include "backpatch.h"
+#include "symtab.h"
+#include "stack.h"
 
 extern int yylex();
 extern int yylineno;
 
-// Manejo de errores
-void yyerror(char *);
+/* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
+void yyerror(char *);
 
 /* Variable para el conteo de direcciones */
 int dir=0;
@@ -28,6 +29,10 @@ int dir=0;
 /* Variables para guardar el tipo y ancho actual */
 int current_type;
 int current_dim;
+
+/* Variable para iniciar el conteo de dimensiones en un struct*/
+bool struct_decl = false;
+int  struct_dim = 0;
 
 /* Varaibles para contar las temporales, etiquetas e indices */
 int label;
@@ -37,9 +42,8 @@ int indice;
 /* Variable para el unico atributo heredado de sentencia prima*/
 labels lfalses;
 
-
 /* Variable para la tabla de símbolos*/
-symtab tabla_de_simbolos;
+// symtab tabla_de_simbolos;
 
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
@@ -48,6 +52,12 @@ ic codigo_intermedio;
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
 void finish();
+void add_context();
+void del_context(bool context);
+bool exists_id(char id[32]);
+
+/* Pila de tablas de símbolos para cada contexto. */
+stack envs;
 
 exp suma(exp e1, exp e2);
 exp resta(exp e1, exp e2);
@@ -71,14 +81,13 @@ char *newIndex();
 %}
 
 %union{   
-  numero num;
-  char id[32];
-  char car;
-  char* cadena;
-  exp expr;
-  type tipo;
-  labels siguientes;   
- }
+    char   id[32];
+    char   car;
+    char*  cadena;   
+    exp    expresion;
+    type   tipo;
+    numero num;
+}
 
 %token<car> CAR
 %token<id> ID  
@@ -92,6 +101,7 @@ char *newIndex();
 %token BREAK CASE DEFAULT
 %token PRINT
 %token NL
+%token LKEY RKEY
 
 %right ASIG
 %left OR AND
@@ -104,48 +114,124 @@ char *newIndex();
 %left ELSE
 %left IFX 
 
-%type<tipo> tipo 
-%type<booleanos> condicion
-%type<expr> expresion
+
+%type<tipo> tipo
 %type<siguientes> sentencia sentencias
+%type<expresion> expresion
+%type<bools> condicion
+
+
 %start programa
 
 %%
 
-programa: {init();} decl 
-          {print_table(&tabla_de_simbolos);}
-          funciones {printf("programa -> decl funciones\n");};
+programa:   { init(); }
+            decl 
+            funciones   {
+                            env curr_env;
+                            stack_peek(&envs, &curr_env);
 
-decl : tipo {current_type = $1.type; current_dim = $1.dim;}
-       lista PYC decl {printf("decl -> tipo lista PYC decl\n");}
-      | %empty {};
+                            print_table(&curr_env.symbols);    
+                            printf("programa -> decl funciones\n");
+                        };
 
-tipo:         INT //{$$.type = 0; $$.dim = 4;
-              {printf("tipo -> int\n");}
-            | FLOAT {$$.type =1; $$.dim = 4;
-              printf("tipo -> float\n");}
-            | DOUBLE {$$.type= 2; $$.dim = 8; 
-              printf("tipo -> double\n");}
-            | CHAR {printf("tipo -> char\n");}
-            | VOID {printf("tipo -> void\n");}
-            | STRUCT LKEY decl RKEY {printf("tipo -> struct { decl }\n");};
+decl :      tipo    {   
+                        current_type = $1.type; 
+                        current_dim  = $1.dim;
+                    }      
+            lista PYC decl {
+                                printf("decl -> tipo lista PYC decl\n");
+                            }
+            | %empty {};
 
-lista : lista COM ID arreglo 
-         /* { sym s;
-            strcpy(s.id, $3);
-            s.type = current_type;
-            s.dir = dir;
-            dir+= current_dim;
-            insert(&tabla_de_simbolos, s);*/{
-            printf("lista -> lista , id arreglo\n");}
-            | ID arreglo 
-          { sym s;
-            strcpy(s.id, $1);
-            s.type = current_type;
-            s.dir = dir;
-            dir+= current_dim;
-            insert(&tabla_de_simbolos, s);
-            printf("lista- >id arreglo\n");};
+tipo:        VOID   {    
+                        $$.type = 0;
+                        $$.dim  = 0;
+                        printf("tipo -> VOID\n");
+                    }
+            | CHAR {
+                        $$.type = 1;
+                        $$.dim  = 1;
+                        printf("tipo -> CHAR\n");
+                    }
+            | INT   {
+                        $$.type = 2;
+                        $$.dim = 4;
+                        printf("tipo -> INT\n");
+                    }
+            | FLOAT {
+                        $$.type = 3;
+                        $$.dim = 4;
+                        printf("tipo -> FLOAT\n");
+                    }
+            | DOUBLE{
+                        $$.type = 4;
+                        $$.dim = 8;
+                        printf("tipo -> DOUBLE\n");
+                    }
+            | STRUCT{   
+                        struct_decl = true;
+                        add_context();
+                    }
+                LKEY decl RKEY {
+                                    $$.type = 5;
+                                    $$.dim  = struct_dim;
+                                    printf("tipo -> struct { decl }\n");
+                                    del_context(true);
+                                };
+
+lista :     lista 
+            COM 
+            ID  {
+                    if (exists_id($3))
+                    {
+                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
+                        return 1;
+                    }                
+
+
+                    if (current_type == 5)
+                    {
+                        yyerror("[ERROR] Struct solo puede tener un identificador.");
+                        return 1;
+                    }                    
+
+                    sym symbol;
+                    strcpy(symbol.id, $3);
+                    symbol.type = current_type;
+                    symbol.dir  = dir;
+                    dir += current_dim;
+                    
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
+                    if (struct_decl)
+                        struct_dim += current_dim;
+                } 
+            arreglo {printf("lista -> lista , id arreglo\n");}
+            
+            | ID {
+                    if (exists_id($1))
+                    {
+                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
+                        return 1;
+                    }                
+
+                    sym symbol;
+                    strcpy(symbol.id, $1);
+                    symbol.type = current_type;
+                    symbol.dir  = dir;
+                    
+                    dir += current_dim;
+                    env curr_env;
+                    stack_pop(&envs, &curr_env);
+                    insert(&curr_env.symbols, symbol);
+                    stack_push(&envs, &curr_env);
+                    if (current_type != 5 && struct_decl)
+                        struct_dim += current_dim;
+                } 
+              arreglo {printf("lista- >id arreglo\n");};
 
 arreglo : LCOR NUMERO RCOR arreglo {printf("arreglo -> id arreglo\n");}
             | %empty {};
@@ -163,27 +249,8 @@ parte_arr : LCOR RCOR parte_arr
             {printf("parte_arr -> [] parte_arr\n");}
             | %empty {};
 
-sentencias : sentencias { 
-            cuadrupla c;
-            c.op = LB;
-            strcpy(c.op1, "");
-            strcpy(c.op2, "");
-            strcpy(c.res, get_first(&$1));
-            insert_cuad(&codigo_intermedio, c);} 
-            sentencia 
-            {
-                char label[32];
-                strcpy(label,newLabel());
-                $$ = $3;                
-                backpatch(&$1, label, &codigo_intermedio);
-                printf("sentencias -> sentencias sentencia\n");  
-            }
-            | sentencia {
-                char label[32];
-                strcpy(label, newLabel());
-                $$ = $1;
-                backpatch(&$1, label, &codigo_intermedio);
-                printf("sentencias -> sentencia\n");};
+sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
+            | sentencia {printf("sentencias -> sentencia\n");};
 
 sentif : sentencias ELSE sentencias
         {printf("sentif -> else sentencias\n");}
@@ -197,12 +264,8 @@ sentencia :  IF LPAR condicion RPAR sentif
             {printf("sentencias -> do sentencias while ( condicion) ;\n"); } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
             {printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");}
-            | parte_izq ASIG expresion PYC {
-                char i[32];
-                strcpy(i, newIndex());
-                $$ = create_list(i);
-                //asignacion($1, $3); 
-                printf("sentencias -> parte_izq = expresion\n");}
+            | parte_izq ASIG expresion PYC
+            {printf("sentencias -> parte_izq = expresion\n");}
             | RETURN expresion PYC
             {printf("sentencias -> return expresion ;\n");}
             | RETURN PYC
@@ -231,17 +294,13 @@ var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n
             | var_arreglo LCOR expresion RCOR {printf("var_arreglo -> var arreglo [ expresion ]\n");};
 
 expresion: expresion MAS expresion 
-            {$$ =suma($1, $3); 
-              printf("expresion -> expresion + expresion \n");}
+            {printf("expresion -> expresion + expresion \n");}
             | expresion MENOS expresion 
-            {$$ =resta($1, $3);
-             printf("expresion -> expresion - expresion \n");}
+            {printf("expresion -> expresion - expresion \n");}
             | expresion MUL expresion
-            {$$ = multiplicacion($1, $3);
-              printf("expresion -> expresion * expresion \n");}
+            {printf("expresion -> expresion * expresion \n");}
             | expresion DIV expresion
-            {$$ =division($1, $3);
-             printf("expresion -> expresion / expresion \n");}
+            {printf("expresion -> expresion / expresion \n");}
             | expresion MOD expresion
             {printf("expresion -> expresion mod expresion \n");}
             | var_arreglo
@@ -267,7 +326,8 @@ condicion: condicion OR condicion
             {printf("condicion -> ! condicion \n");}
             | LPAR condicion RPAR 
             {printf("condicion -> ( condicion ) \n");}
-            | expresion relacional expresion               {printf("condicion -> expresion rel expresion \n");}
+            | expresion relacional expresion
+            {printf("condicion -> expresion rel expresion \n");}
             | TRUE {printf("condicion -> true \n");}
             | FALSE {printf("condicion -> false\n");}; 
 
@@ -283,248 +343,83 @@ void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
 }
 
-
-void yyerror2(char *c, char *c2){
-    strcat(c, c2);
-    yyerror(c);
+void yyerror2(char *s, char *n){
+    printf("%s %s: en la línea %d\n",s, n, yylineno);
 }
 
-void init(){    
-    create_table(&tabla_de_simbolos);
+void init()
+{
     create_code(&codigo_intermedio);
-    create_labels(&lfalses);    
-}
 
-void finish(){    
-    print_code(&codigo_intermedio);    
-}
-
-exp suma(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = MA;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-    }
-    return e;    
-}
-
-exp resta(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    char t[32];
-    e.type = max(e1.type, e2.type);
+    stack_new(&envs, sizeof(symtab), NULL);
     
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = MEN;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
+    symtab sym_tab;
+    create_table(&sym_tab);
+
+    stack exprs;
+    stack_new(&exprs, 32 * sizeof(char), NULL);
+
+    env initial_env;
+    initial_env.symbols = sym_tab;
+    initial_env.exprs   = exprs;
+
+    stack_push(&envs, &initial_env);
+}
+
+void add_context()
+{
+    /* Guardamos la última dirección usada en el ambiente actual. */
+    env curr_env;
+    stack_pop(&envs, &curr_env);
+    curr_env.symbols.last_dir = dir;
+    stack_push(&envs, &curr_env);
+
+    /* Nueva tabla de símbolos. */
+    symtab new_symtab;
+    create_table(&new_symtab);
+
+    /* Nueva pila para expresiones. */
+    stack exprs;
+    stack_new(&exprs, 32 * sizeof(char), NULL);
+
+    /* Finalmente, creamos el nuevo ambiente. */
+    env my_env;
+    my_env.symbols = new_symtab;
+    my_env.exprs = exprs;
+
+    stack_push(&envs, &my_env);
+    dir = 0;
+}
+
+void del_context(bool print_context)
+{
+    env curr_env;
+    stack_pop(&envs, &curr_env);
+    if (print_context)
+    {
+        printf("\n~ Tabla de Símbolos:\n");
+        print_table(&curr_env.symbols);
     }
-    return e;    
-}
 
-exp multiplicacion(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = ML;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
+    if (stack_size(&envs) > 0)
+    {   
+        stack_peek(&envs, &curr_env);
+        dir = curr_env.symbols.last_dir;
     }
-    return e;    
 }
 
-exp division(exp e1, exp e2){
-    exp e;
-    cuadrupla c;
-    e.type = max(e1.type, e2.type);
-    if( e.type==-1) yyerror("Error de tipos");
-    else{
-        char t[32];
-        strcpy(t,newTemp());
-        strcpy(e.dir, t);
-        c.op = DV;
-        strcpy(c.op1, ampliar(e1.dir, e1.type, e.type));
-        strcpy(c.op2, ampliar(e2.dir, e2.type, e.type));
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
+bool exists_id(char id[32])
+{
+    env curr_env;
+    stack_peek(&envs, &curr_env);
+    symtab curr_symtab = curr_env.symbols;
+    int i;
+    for (i = 0; i < curr_symtab.count; i++)
+    {   
+        if (strcmp(curr_symtab.symbols[i].id, id) == 0)
+            return true;
     }
-    return e;    
-}
-
-exp asignacion(char *id, exp e){
-    exp e1;
-    int tipo = get_type(&tabla_de_simbolos, id);
-    if( tipo != -1){        
-        e1.type = e.type;
-        strcpy(e1.dir, id);
-        cuadrupla c;
-        c.op = AS;
-        strcpy(c.op1, reducir(e.dir, tipo, e.type));
-        strcpy(c.op2, "");
-        strcpy(c.res, id);
-        insert_cuad(&codigo_intermedio, c);  
-        
-    }else{
-        yyerror("El identificador no fue declarado\n");
-    }
-    return e1;
-}
-
-
-exp get_numero(numero n){
-    exp e;
-    e.type = n.type;
-    strcpy(e.dir, n.val);
-    return e;
-}
-
-exp identificador(char *id){
-    exp e;
-    if(search(&tabla_de_simbolos, id)!=-1){
-        e.type = get_type(&tabla_de_simbolos, id);
-        strcpy(e.dir, id);
-    }else{
-        yyerror("Error semantico: el identificador no existe");
-    }
-    return e;
-}
-
-
-int max(int t1, int t2){
-    if( t1==t2) return t1;
-    if( t1 ==0 && t2 == 1) return 1;
-    if( t1 ==1 && t2 == 0) return 1;    
-    if( t1 ==0 && t2 == 2) return 2;
-    if( t1 ==2 && t2 == 0) return 2;
-    if( t1 ==2 && t2 == 1) return 2;
-    if( t1 ==1 && t2 == 2) return 2;
-    else return -1;
-}
-
-char *ampliar(char *dir, int t1, int t2){
-    cuadrupla c;
-    char *t= (char*) malloc(32*sizeof(char));
-    
-    if( t1==t2) return dir;
-    if( t1 ==0 && t2 == 1){
-        c.op = EQ;
-        strcpy(c.op1, "(float)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }        
-    if( t1 ==0 && t2 == 2){
-        c.op = EQ;
-        strcpy(c.op1, "(double)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }        
-    
-    if( t1 ==1 && t2 == 2) {
-        c.op = EQ;
-        strcpy(c.op1, "(double)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        return t;
-    }            
-}
-
-
-char *reducir(char *dir, int t1, int t2){
-    cuadrupla c;
-    char *t= (char*) malloc(32*sizeof(char));
-    
-    if( t1==t2) return dir;
-    if( t1 ==0 && t2 == 1){
-        c.op = EQ;
-        strcpy(c.op1, "(int)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Pérdida de información se esta asignando un float a un int\n");
-        return t;
-    }        
-    if( t1 ==0 && t2 == 2){
-        c.op = EQ;
-        strcpy(c.op1, "(int)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Pérdida de información se esta asignando un double a un int\n");
-        return t;
-    }        
-    
-    if( t1 ==1 && t2 == 2) {
-        c.op = EQ;
-        strcpy(c.op1, "(float)");
-        strcpy(c.op2, dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
-        insert_cuad(&codigo_intermedio, c);
-        printf("Perdida de información se esta asignando un double a un float\n");
-        return t;
-    }            
-}
-
-char* newTemp(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "t");
-    char num[30];
-    sprintf(num, "%d", temp);
-    strcat(temporal, num);
-    temp++;
-    return temporal;
-}
-
-char* newLabel(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "L");
-    char num[30];
-    sprintf(num, "%d", label);
-    strcat(temporal, num);
-    label++;
-    return temporal;
-}
-
-
-char* newIndex(){
-    char *temporal= (char*) malloc(32*sizeof(char));
-    strcpy(temporal , "I");
-    char num[30];
-    sprintf(num, "%d", indice);
-    strcat(temporal, num);
-    indice++;
-    return temporal;
+    return false;
 }
 
 /*
