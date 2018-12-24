@@ -67,7 +67,7 @@ exp identificador(char *);
 exp asignacion(char *id, exp e);
 
 /* Funciones auxiliares para la comprobación de tipos */
-int max(int t1, int t2);
+int max_type(int t1, int t2);
 char *ampliar(char *dir, int t1, int t2);
 char *reducir(char *dir, int t1, int t2);
 
@@ -81,7 +81,7 @@ char *newIndex();
 
 %union{   
     char   id[32];
-    char   dir[32];
+    //char   dir[32];
     char*  car;
     char*  cadena;   
     exp    expr;
@@ -116,9 +116,8 @@ char *newIndex();
 
 
 %type<tipo> tipo
-%type<dir> parte_izq
 %type<siguientes> sentencia sentencias
-%type<expr> expresion
+%type<expr> expresion parte_izq
 %type<bools> condicion
 
 
@@ -284,14 +283,18 @@ sentencia :  IF LPAR condicion RPAR sentif
                     printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
             | parte_izq ASIG expresion PYC
-                {
-                    cuadrupla cuad;
-                    cuad.op  = AS;
-                    strcpy(&cuad.res, $1);
-                    strcpy(&cuad.op1, $3.dir);
-                    insert_cuad(&codigo_intermedio, cuad);
-
-                    printf("sentencias -> parte_izq = expresion\n");
+                {   
+                    int compatible = max_type($1.type.type, $3.type.type);
+                    if(compatible == -1) 
+                        yyerror("Error: No se puede asignar, tipos incompatibles.");
+                    else {
+                        cuadrupla cuad;
+                        cuad.op  = AS;
+                        strcpy(&cuad.res, $1.dir);
+                        strcpy(&cuad.op1, $3.dir);
+                        insert_cuad(&codigo_intermedio, cuad);
+                        printf("sentencias -> parte_izq = expresion\n");
+                    }
                 }
             | RETURN expresion PYC
                 {
@@ -335,7 +338,8 @@ parte_izq : ID  {
                         yyerror2("[ERROR] No se ha declarado la variable", $1);
                         return 1;
                     }
-                    strcpy($$, $1);
+                    strcpy($$.dir, $1);
+                    $$.type = get_type(&curr_env.symbols, $1);
                     printf("parte_izq -> id\n");
                 }
             | var_arreglo 
@@ -356,15 +360,18 @@ expresion:   expresion
                     char *t = (char*) malloc(32 * sizeof(char));
                     strcpy(t, newTemp());
                     strcpy($$.dir, t);
-                    // Falta el tipooooooooooooooooooooooooo $$.type
-
-                    cuadrupla cuad;
-                    cuad.op = MA;
-                    strcpy(cuad.res, $$.dir);
-                    strcpy(cuad.op1, $1.dir);
-                    strcpy(cuad.op2, $3.dir);
-                    insert_cuad(&codigo_intermedio, cuad);
-                    printf("expresion -> expresion + expresion \n");
+                    int max = max_type($1.type.type,$3.type.type);
+                    if(max==-1) 
+                        yyerror("Error: Tipos incompatibles.");
+                    else{
+                        cuadrupla cuad;
+                        cuad.op = MA;
+                        strcpy(cuad.res, $$.dir);
+                        strcpy(cuad.op1, $1.dir);
+                        strcpy(cuad.op2, $3.dir);
+                        insert_cuad(&codigo_intermedio, cuad);
+                        printf("expresion -> expresion + expresion \n");
+                    }
                 }
             | expresion MENOS expresion 
                 {
@@ -400,7 +407,7 @@ expresion:   expresion
                     printf("expresion -> cadena %s\n", $1);
                 }
             | NUMERO 
-                {
+                {   $$.type.type = $1.type;
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
@@ -523,6 +530,20 @@ char* newTemp(){
     return temporal;
 }
 
+int max_type(int t1, int t2){
+    if (t1 == t2) return t1;
+    else {
+        /*Si son ambos números. */
+        if (t1 > 1 && t1 < 5 && 
+            t2 > 1 && t2 < 5) 
+            if (t1 < t2) return t2;
+            else return t1;
+        /*Si no son números -> tipos incompatibles.
+         Por ahora no se pude hacer int a char*/    
+        return -1;
+    } 
+
+}
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
             | sentencias {printf("mif -> sentencias\n");};

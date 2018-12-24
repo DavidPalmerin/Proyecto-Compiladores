@@ -23,7 +23,7 @@ char array_C[15][3];
 func int foo(int k, int l)
 {
 	a= l();
-	b = 4;
+	b = "a";
 	tre = 'A';
 	b = a() + rew() + 3 + x() + y() + z();
 }

@@ -19,7 +19,7 @@ extern "C" {
 
     typedef struct _exp{
         char dir[32];
-        int type;
+        type type;
     } exp;
     
     typedef struct _numero{

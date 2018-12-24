@@ -283,21 +283,21 @@ espacio [ \t]
 {int}		{ 
 				fprintf(tokens_output, "Encontré un int: %s\n", yytext);
 				strcpy(yylval.num.val, yytext);
-				yylval.num.type = 0;	
+				yylval.num.type = 2;	
 				return NUMERO; 
 			}
 
 {float}		{ 
 				fprintf(tokens_output, "Encontré un float: %s\n", yytext);
 				strcpy(yylval.num.val, yytext);
-				yylval.num.type = 1;
+				yylval.num.type = 3;
 				return NUMERO; 
 			}
 
 {double}	{ 
 				fprintf(tokens_output, "Encontré un double: %s\n", yytext);
 				strcpy(yylval.num.val, yytext);
-				yylval.num.type = 2;
+				yylval.num.type = 4;
 				return NUMERO;
 			}
 
