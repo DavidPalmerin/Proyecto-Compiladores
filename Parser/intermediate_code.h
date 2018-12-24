@@ -33,19 +33,17 @@ extern "C" {
         char op1[32];
         char op2[32];
         char res[32];
-    }cuadrupla;
+    } cuadrupla;
     
      
     typedef struct _intremediate_code{
        cuadrupla c[MAX_CODE];
        int count;
-    }ic;
+    } ic;
     
     void create_code(ic*);
     int insert_cuad(ic*, cuadrupla);      
     void print_code(ic*);
-
-
 
 #ifdef __cplusplus
 }

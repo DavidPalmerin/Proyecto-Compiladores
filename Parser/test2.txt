@@ -18,10 +18,12 @@ int l;
 char tre;
 double pls;
 int rew;
-/*func int foo(int k, int l)
+func int foo(int k, int l)
 {
-	a= 1;
+	a= l();
 	b = 4;
-}*/
+	tre = 'A';
+	b = a() + rew() + 3 + x() + y() + z();
+}
 
 

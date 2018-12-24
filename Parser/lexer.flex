@@ -276,7 +276,7 @@ espacio [ \t]
 
 {char}		{ 
 				fprintf(tokens_output, "Encontré un char: %s\n", yytext);
-				yylval.car = yytext[0];
+				yylval.car = yytext;
 				return CAR;
 			}
 
