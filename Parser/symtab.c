@@ -29,9 +29,11 @@ int insert(symtab *st, sym s){
 
 void print_table(symtab* st){    
     int i;
-    printf("POS\tID\tTIPO\tDIR\n");    
+    printf("POS\tID\tTIPO\tDIR\tDIM\n");    
     for(i=0; i < st->count; i++){
-        printf("%d\t%s\t%d\t%d\n", i, st->symbols[i].id, st->symbols[i].type, st->symbols[i].dir);        
+        printf("%d\t%s\t%d\t%d\t%d\n", i, st->symbols[i].id,
+         st->symbols[i].type.type, st->symbols[i].dir,
+         st->symbols[i].type.dim);        
     }
 }
 
@@ -44,7 +46,7 @@ int get_dir(symtab *st, char* id){
     }
 }
 
-int get_type(symtab* st, char *id){
+type get_type(symtab* st, char *id){
     int i;
     for(i=0; i< st->count; i++){
         if(strcmp(st->symbols[i].id,id)==0)
