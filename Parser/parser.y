@@ -54,6 +54,10 @@ void init();
 void finish();
 void add_context();
 void del_context(bool context);
+<<<<<<< HEAD
+=======
+bool exists_id(char id[32]);
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -81,10 +85,16 @@ char *newIndex();
 
 %union{   
     char   id[32];
+<<<<<<< HEAD
     char   dir[32];
     char*  car;
     char*  cadena;   
     exp    expr;
+=======
+    char   car;
+    char*  cadena;   
+    exp    expresion;
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
     type   tipo;
     numero num;
 }
@@ -116,9 +126,14 @@ char *newIndex();
 
 
 %type<tipo> tipo
+<<<<<<< HEAD
 %type<dir> parte_izq
 %type<siguientes> sentencia sentencias
 %type<expr> expresion
+=======
+%type<siguientes> sentencia sentencias
+%type<expresion> expresion
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 %type<bools> condicion
 
 
@@ -134,7 +149,10 @@ programa:   { init(); }
 
                             print_table(&curr_env.symbols);    
                             printf("programa -> decl funciones\n");
+<<<<<<< HEAD
                             finish();
+=======
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
                         };
 
 decl :      tipo    {   
@@ -185,9 +203,13 @@ tipo:        VOID   {
 lista :     lista 
             COM 
             ID  {
+<<<<<<< HEAD
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (search(&curr_env.symbols, $3) != -1)
+=======
+                    if (exists_id($3))
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
                         return 1;
@@ -206,6 +228,10 @@ lista :     lista
                     symbol.dir  = dir;
                     dir += current_dim;
                     
+<<<<<<< HEAD
+=======
+                    env curr_env;
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
                     stack_push(&envs, &curr_env);
@@ -215,9 +241,13 @@ lista :     lista
             arreglo {printf("lista -> lista , id arreglo\n");}
             
             | ID {
+<<<<<<< HEAD
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (search(&curr_env.symbols, $1) != -1)
+=======
+                    if (exists_id($1))
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
                         return 1;
@@ -229,6 +259,10 @@ lista :     lista
                     symbol.dir  = dir;
                     
                     dir += current_dim;
+<<<<<<< HEAD
+=======
+                    env curr_env;
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
                     stack_push(&envs, &curr_env);
@@ -273,6 +307,7 @@ sentencia :  IF LPAR condicion RPAR sentif
                     printf("sentencias -> do sentencias while ( condicion) ;\n"); 
                 } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
+<<<<<<< HEAD
                 {
                     printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
@@ -286,6 +321,11 @@ sentencia :  IF LPAR condicion RPAR sentif
 
                     printf("sentencias -> parte_izq = expresion\n");
                 }
+=======
+            {printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");}
+            | parte_izq ASIG expresion PYC
+            {printf("sentencias -> parte_izq = expresion\n");}
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
             | RETURN expresion PYC
                 {
                     printf("sentencias -> return expresion ;\n");
@@ -343,12 +383,12 @@ parte_izq : ID  {
 var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n");}
             | var_arreglo LCOR expresion RCOR {printf("var_arreglo -> var arreglo [ expresion ]\n");};
 
+<<<<<<< HEAD
 expresion:   expresion  
              MAS expresion 
                 {
                     char *t = (char*) malloc(32 * sizeof(char));
                     strcpy(t, newTemp());
-                    printf("TEMPRAAAAAAL: %s", t);
                     strcpy($$.dir, t);
                     // Falta el tipooooooooooooooooooooooooo $$.type
 
@@ -375,6 +415,16 @@ expresion:   expresion
                     /* Análogo a suma. */
                     printf("expresion -> expresion / expresion \n");
                 }
+=======
+expresion: expresion MAS expresion 
+            {printf("expresion -> expresion + expresion \n");}
+            | expresion MENOS expresion 
+            {printf("expresion -> expresion - expresion \n");}
+            | expresion MUL expresion
+            {printf("expresion -> expresion * expresion \n");}
+            | expresion DIV expresion
+            {printf("expresion -> expresion / expresion \n");}
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
             | expresion MOD expresion
                 {
                     /* Análogo a suma. */
@@ -446,7 +496,11 @@ void init()
 {
     create_code(&codigo_intermedio);
 
+<<<<<<< HEAD
     stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
+=======
+    stack_new(&envs, sizeof(symtab), NULL);
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
     
     symtab sym_tab;
     create_table(&sym_tab);
@@ -461,6 +515,7 @@ void init()
     stack_push(&envs, &initial_env);
 }
 
+<<<<<<< HEAD
 void finish()
 {
     print_code(&codigo_intermedio);
@@ -491,6 +546,33 @@ void add_context()
     dir = 0;
 }
 
+=======
+void add_context()
+{
+    /* Guardamos la última dirección usada en el ambiente actual. */
+    env curr_env;
+    stack_pop(&envs, &curr_env);
+    curr_env.symbols.last_dir = dir;
+    stack_push(&envs, &curr_env);
+
+    /* Nueva tabla de símbolos. */
+    symtab new_symtab;
+    create_table(&new_symtab);
+
+    /* Nueva pila para expresiones. */
+    stack exprs;
+    stack_new(&exprs, 32 * sizeof(char), NULL);
+
+    /* Finalmente, creamos el nuevo ambiente. */
+    env my_env;
+    my_env.symbols = new_symtab;
+    my_env.exprs = exprs;
+
+    stack_push(&envs, &my_env);
+    dir = 0;
+}
+
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 void del_context(bool print_context)
 {
     env curr_env;
@@ -508,6 +590,7 @@ void del_context(bool print_context)
     }
 }
 
+<<<<<<< HEAD
 char* newTemp(){
     char *temporal= (char*) malloc(32*sizeof(char));
     strcpy(temporal , "t");
@@ -516,6 +599,20 @@ char* newTemp(){
     strcat(temporal, num);
     temp++;
     return temporal;
+=======
+bool exists_id(char id[32])
+{
+    env curr_env;
+    stack_peek(&envs, &curr_env);
+    symtab curr_symtab = curr_env.symbols;
+    int i;
+    for (i = 0; i < curr_symtab.count; i++)
+    {   
+        if (strcmp(curr_symtab.symbols[i].id, id) == 0)
+            return true;
+    }
+    return false;
+>>>>>>> 359918fe32392943cd79bdbdd50058197286002f
 }
 
 /*
