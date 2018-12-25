@@ -78,8 +78,8 @@ void asignar(exp e1,exp e2);
 
 /* Funciones auxiliares para la comprobación de tipos */
 int max_type(int t1, int t2);
-char *ampliar(char *dir, int t1, int t2);
-char *reducir(exp e1,exp e2);
+char *ampliar(char *dir, int t, int w);
+char *reducir(char *dir, int t, int w);
 
 
 /* Funciones para generar temporales, etiquetas e indices */
@@ -363,8 +363,8 @@ sentencia :  IF LPAR condicion RPAR sentif
                 }
             | parte_izq ASIG expresion PYC
                 {   
-                    int compatible = max_type($1.type.type, $3.type.type);
-                    if(compatible == -1) 
+                    int max = max_type($1.type.type, $3.type.type);
+                    if(max == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
                     else 
                     {
@@ -490,8 +490,6 @@ expresion:   expresion
             | ID                          
                 LPAR parametros RPAR 
                 {   
-
-                    
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
@@ -663,53 +661,87 @@ int max_type(int t1, int t2){
 void asignar(exp e1, exp e2){
     cuadrupla cuad;
     cuad.op  = AS;
-    //Sabiendo que se puede reducir;
     strcpy(&cuad.res, e1.dir);
-    strcpy(&cuad.op1, reducir(e1,e2));
+    int t1 = e1.type.type;
+    int t2 = e2.type.type;
+    if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
+    else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
     insert_cuad(&codigo_intermedio, cuad);
 }
 
-/* Se crea una temporal en el caso de que se necesite hacer la reduccion de e2 a e1, y se devuelve su dirección a donde rediccionaremos el valor casteado. (Solo para números.)*/
-char *reducir(exp e1, exp e2){
+/* Ampliar el numero de la expresion con dirección dir,
+    de tipo t al tipo w (menor).(int a = 2.0 (int))*/
+char *reducir(char * dir, int t, int w){
     // Si son del mismo tipo, no es necesario hacer la reducción
-    int t1 = e1.type.type;
-    int t2 = e2.type.type;
-    char *t = (char*) malloc(32*sizeof(char));
-    if(t1 >= t2) {
-        strcpy(t,e2.dir);
-        printf("AÚN NO AMPLÍA\n");
-        return t;
+    char *temp = (char*) malloc(32*sizeof(char));
+    if(t == w) {
+        strcpy(temp,dir);;
+        return temp;
     }
     cuadrupla c;
-    c.op = EQ;
-    if(t1 == 2){ //Si vamos a castear a int
+    c.op = CT;
+    if(w == 2){ //Si vamos a castear a int
         strcpy(c.op1, "(int)");
-        strcpy(c.op2, e2.dir);
-        strcpy(t, newTemp());
-        strcpy(c.res, t);
+        strcpy(c.op2, dir);
+        strcpy(temp, newTemp());
+        strcpy(c.res, temp);
         insert_cuad(&codigo_intermedio, c);
-        if(t2 == 3){ //un float
-            printf("Pérdida de información, se está asignando un float a un int\n");
-            return t; 
+        if(t == 3){ //un float
+            printf("Pérdida de información, se está asignando un float a un int.\n");
+            return temp; 
         }        
-        if(t2 == 4){ //un double
-            printf("Pérdida de información, se está asignando un double a un int\n");
-            return t; 
+        if(t == 4){ //un double
+            printf("Pérdida de información, se está asignando un double a un int.\n");
+            return temp; 
         }          
     }
-    if(t1 == 3){ //Si vamos a castear a float
-        if(t2 == 4){ //un double
+    if(w == 3){ //Si vamos a castear a float
+        if(t == 4){ //un double
             strcpy(c.op1, "(float)");
-            strcpy(c.op2, e2.dir);
-            strcpy(t, newTemp());
-            strcpy(c.res, t);
+            strcpy(c.op2, dir);
+            strcpy(temp, newTemp());
+            strcpy(c.res, temp);
             insert_cuad(&codigo_intermedio, c); 
             printf("Pérdida de información, se está asignando un double a un float.\n");
-            return t; 
+            return temp; 
         }        
     }
     printf("Error: Esto no debería ocurrir\n");
               
+}
+/* Ampliar el numero de la expresion con dirección dir,
+    de tipo t al tipo w (más grande).*/
+char *ampliar(char *dir, int t, int w){
+    char *temp = (char*) malloc(32*sizeof(char));
+    if( t==w){
+        strcpy(temp,dir);
+        return temp;
+    } 
+    cuadrupla c;
+    c.op = CT;
+    if( w == 3){
+        strcpy(c.op1, "(float)");
+        strcpy(c.op2, dir);
+        strcpy(temp, newTemp());
+        strcpy(c.res, temp);
+        insert_cuad(&codigo_intermedio, c);
+        if (t == 2)
+            printf("Cast de int a float..\n");
+        return temp;
+    }        
+    if( w == 4){
+        strcpy(c.op1, "(double)");
+        strcpy(c.op2, dir);
+        strcpy(temp, newTemp());
+        strcpy(c.res, temp);
+        insert_cuad(&codigo_intermedio, c);
+        if (t == 2)
+            printf("Cast de int a double.\n");
+        if (t == 3)
+            printf("Cast de float a double.\n");
+        return temp;
+    }        
+    printf("Error: Esto no debería ocurrir\n");
 }
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
