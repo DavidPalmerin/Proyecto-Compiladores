@@ -30,7 +30,7 @@ func int foo(int k, int l)
 	a= pls();
 	b = 4 % 1;
 	tre = 'A';
-	b = a() + rew() + 3 + x() + y() + z();
+	b = a() + rew() - 3 + x() * y() / z();
 }
 
 func int _foo()

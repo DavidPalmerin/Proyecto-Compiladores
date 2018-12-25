@@ -1,0 +1,17 @@
+kes = a
+t0 = (int) pls
+a = t0
+t1 = 4 % 1
+t2 = (double) t1
+b = t2
+tre = 'A'
+t3 = a + rew
+t4 = t3 - 3
+t5 = x * y
+t6 = t5 / z
+t7 = t4 + t6
+t8 = (double) t7
+b = t8
+pro = 2
+t9 = 3 + 3
+a = t9
