@@ -53,9 +53,13 @@ void print_table(symtab* st){
 
 void fprint_table(symtab* st, FILE *file){    
     int i;
-    printf("POS\tID\tTIPO\tDIR\n");    
+    fprintf(file,"POS\tID\tTIPO\tDIR\tDIM\n");    
     for(i=0; i < st->count; i++){
-        fprintf(file, "%d\t%s\t%d\t%d\n", i, st->symbols[i].id, st->symbols[i].type.type, st->symbols[i].dir);        
+        fprintf(file, "%d\t%s\t%d\t%d\t%d\n", i, 
+            st->symbols[i].id, 
+            st->symbols[i].type.type, 
+            st->symbols[i].dir,
+            st->symbols[i].type.dim);          
     }
 }
 
