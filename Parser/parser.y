@@ -69,9 +69,6 @@ void print_context(char *s1, char *s2);
 stack envs;
 
 exp math_function(exp e1, exp e2,int op);
-exp resta(exp e1, exp e2);
-exp multiplicacion(exp e1, exp e2);
-exp division(exp e1, exp e2);
 exp get_numero(numero);
 exp identificador(char *);
 void asignar(exp e1,exp e2);
@@ -91,7 +88,6 @@ char *newIndex();
 
 %union{   
     char   id[32];
-    //char   dir[32];
     char*  car;
     char*  cadena;   
     exp    expr;
