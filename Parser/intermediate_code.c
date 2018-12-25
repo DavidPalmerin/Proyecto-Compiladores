@@ -76,6 +76,10 @@ void print_code(ic* code){
                 fprintf(CODIGO, "%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
                 //printf("%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
                 break;
+           case MD:
+                fprintf(CODIGO, "%s = %s %% %s\n", temporal.res, temporal.op1, temporal.op2);
+                //printf("%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
+                break;
             case LB:
                 fprintf(CODIGO, "%s:", temporal.res);
                 //printf("%s:", temporal.res);
@@ -86,7 +90,7 @@ void print_code(ic* code){
                 break;
             case CT:
                 fprintf(CODIGO, "%s = %s %s\n",  temporal.res, temporal.op1,temporal.op2);
-                //printf("%s = %s\n", temporal.res, temporal.op1);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
                 break;
         }        
     }

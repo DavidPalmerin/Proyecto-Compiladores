@@ -68,7 +68,7 @@ void print_context(char *s1, char *s2);
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
 
-exp suma(exp e1, exp e2);
+exp math_function(exp e1, exp e2,int op);
 exp resta(exp e1, exp e2);
 exp multiplicacion(exp e1, exp e2);
 exp division(exp e1, exp e2);
@@ -431,41 +431,28 @@ var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n
 
 expresion:   expresion  
              MAS expresion 
-                {
-                    char *t = (char*) malloc(32 * sizeof(char));
-                    strcpy(t, newTemp());
-                    strcpy($$.dir, t);
-                    int max = max_type($1.type.type,$3.type.type);
-                    if(max==-1) 
-                        yyerror("Error: Tipos incompatibles.");
-                    else{
-                        cuadrupla cuad;
-                        cuad.op = MA;
-                        strcpy(cuad.res, $$.dir);
-                        strcpy(cuad.op1, $1.dir);
-                        strcpy(cuad.op2, $3.dir);
-                        insert_cuad(&codigo_intermedio, cuad);
-                        printf("expresion -> expresion + expresion \n");
-                    }
+                {   
+                    $$ = math_function($1,$3,MA);
+                    printf("expresion -> expresion + expresion \n");
                 }
             | expresion MENOS expresion 
                 {
-                    /* Análogo a suma. */
+                    $$ = math_function($1,$3,MEN);
                     printf("expresion -> expresion - expresion \n");
                 }
             | expresion MUL expresion
                 {
-                    /* Análogo a suma. */
+                    $$ = math_function($1,$3,ML);
                     printf("expresion -> expresion * expresion \n");
                 }
             | expresion DIV expresion
                 {
-                    /* Análogo a suma. */
+                    $$ = math_function($1,$3,DV);
                     printf("expresion -> expresion / expresion \n");
                 }
             | expresion MOD expresion
                 {
-                    /* Análogo a suma. */
+                    $$ = math_function($1,$3,MD);
                     printf("expresion -> expresion mod expresion \n");
                 }
             | var_arreglo
@@ -742,6 +729,28 @@ char *ampliar(char *dir, int t, int w){
         return temp;
     }        
     printf("Error: Esto no debería ocurrir\n");
+}
+
+/* Te devuelve la expresión correspondiente a la operación
+    dada y lo traduce a código intermedio. */
+exp math_function(exp e1, exp e2, int op){
+    exp e;
+    int max = max_type(e1.type.type,e2.type.type);
+    e.type.type = max;
+    if(max==-1) 
+        yyerror("Error: Tipos incompatibles.");
+    else{
+        char *t = (char*) malloc(32 * sizeof(char));
+        strcpy(t, newTemp());
+        strcpy(e.dir, t);
+        cuadrupla cuad;
+        cuad.op = op;
+        strcpy(cuad.res, e.dir);
+        strcpy(cuad.op1, ampliar(e1.dir,e1.type.type,max));
+        strcpy(cuad.op2, ampliar(e2.dir,e2.type.type,max));
+        insert_cuad(&codigo_intermedio, cuad);
+        }
+    return e;
 }
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}

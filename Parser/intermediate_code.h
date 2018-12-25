@@ -24,9 +24,10 @@ extern "C" {
 #define MEN 10
 #define ML 11
 #define DV 12
-#define LB 13
-#define AS 14
-#define CT 15
+#define MD 13
+#define LB 14
+#define AS 15
+#define CT 16
 #define MAX_CODE 1000
     
     typedef struct _cuadrupla{
