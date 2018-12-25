@@ -74,12 +74,12 @@ exp multiplicacion(exp e1, exp e2);
 exp division(exp e1, exp e2);
 exp get_numero(numero);
 exp identificador(char *);
-exp asignacion(char *id, exp e);
+void asignar(exp e1,exp e2);
 
 /* Funciones auxiliares para la comprobación de tipos */
 int max_type(int t1, int t2);
 char *ampliar(char *dir, int t1, int t2);
-char *reducir(char *dir, int t1, int t2);
+char *reducir(exp e1,exp e2);
 
 
 /* Funciones para generar temporales, etiquetas e indices */
@@ -366,12 +366,9 @@ sentencia :  IF LPAR condicion RPAR sentif
                     int compatible = max_type($1.type.type, $3.type.type);
                     if(compatible == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
-                    else {
-                        cuadrupla cuad;
-                        cuad.op  = AS;
-                        strcpy(&cuad.res, $1.dir);
-                        strcpy(&cuad.op1, $3.dir);
-                        insert_cuad(&codigo_intermedio, cuad);
+                    else 
+                    {
+                        asignar($1,$3);
                         printf("sentencias -> parte_izq = expresion\n");
                     }
                 }
@@ -419,7 +416,6 @@ parte_izq : ID  {
                     }
                     strcpy($$.dir, $1);
                     $$.type = get_type(&curr_env.symbols, $1);
-                    printf("parte_izq -> id\n");
                 }
             | var_arreglo 
                 {
@@ -478,6 +474,7 @@ expresion:   expresion
                 }
             | CAR 
                 {   
+                    $$.type.type = 1;
                     strcpy($$.dir, $1);
                     printf("expresion -> car %s\n", $1);
                 }
@@ -490,8 +487,11 @@ expresion:   expresion
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
-            | ID     
-                {
+            | ID                          
+                LPAR parametros RPAR 
+                {   
+
+                    
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
@@ -499,11 +499,8 @@ expresion:   expresion
                         yyerror2("[ERROR] No se encontró el identificador", $1);
                         return 1;
                     }
-                }                     
-                LPAR parametros RPAR 
-                {   
                     strcpy($$.dir, $1);
-                    //Buscar tipo $1.type?
+                    $$.type = get_type(&curr_env.symbols, $1); 
                     printf("expresion -> id %s ( parametros )\n", $1);
                 }
             ;
@@ -648,6 +645,7 @@ bool exists_main()
 }
 
 int max_type(int t1, int t2){
+    printf("TIPO 1: %d, TIPO 2: %d\n",t1,t2);
     if (t1 == t2) return t1;
     else {
         /*Si son ambos números. */
@@ -661,6 +659,58 @@ int max_type(int t1, int t2){
     } 
 }
 
+/* Asina a e1 el valor de la dirección de e2*/
+void asignar(exp e1, exp e2){
+    cuadrupla cuad;
+    cuad.op  = AS;
+    //Sabiendo que se puede reducir;
+    strcpy(&cuad.res, e1.dir);
+    strcpy(&cuad.op1, reducir(e1,e2));
+    insert_cuad(&codigo_intermedio, cuad);
+}
+
+/* Se crea una temporal en el caso de que se necesite hacer la reduccion de e2 a e1, y se devuelve su dirección a donde rediccionaremos el valor casteado. (Solo para números.)*/
+char *reducir(exp e1, exp e2){
+    // Si son del mismo tipo, no es necesario hacer la reducción
+    int t1 = e1.type.type;
+    int t2 = e2.type.type;
+    char *t = (char*) malloc(32*sizeof(char));
+    if(t1 >= t2) {
+        strcpy(t,e2.dir);
+        printf("AÚN NO AMPLÍA\n");
+        return t;
+    }
+    cuadrupla c;
+    c.op = EQ;
+    if(t1 == 2){ //Si vamos a castear a int
+        strcpy(c.op1, "(int)");
+        strcpy(c.op2, e2.dir);
+        strcpy(t, newTemp());
+        strcpy(c.res, t);
+        insert_cuad(&codigo_intermedio, c);
+        if(t2 == 3){ //un float
+            printf("Pérdida de información, se está asignando un float a un int\n");
+            return t; 
+        }        
+        if(t2 == 4){ //un double
+            printf("Pérdida de información, se está asignando un double a un int\n");
+            return t; 
+        }          
+    }
+    if(t1 == 3){ //Si vamos a castear a float
+        if(t2 == 4){ //un double
+            strcpy(c.op1, "(float)");
+            strcpy(c.op2, e2.dir);
+            strcpy(t, newTemp());
+            strcpy(c.res, t);
+            insert_cuad(&codigo_intermedio, c); 
+            printf("Pérdida de información, se está asignando un double a un float.\n");
+            return t; 
+        }        
+    }
+    printf("Error: Esto no debería ocurrir\n");
+              
+}
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
             | sentencias {printf("mif -> sentencias\n");};

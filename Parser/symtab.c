@@ -20,8 +20,7 @@ int search(symtab *st, char*id){
 }
 
 int depth_search(symtab *st, char *id)
-{      
-    symtab *parent = st->parent;
+{   symtab *parent = st->parent;
     int exists = search(st, id); 
     if (exists == -1 && parent != NULL)
         return search(parent, id);
@@ -73,11 +72,13 @@ int get_dir(symtab *st, char* id){
 }
 
 type get_type(symtab* st, char *id){
-    int i;
-    for(i=0; i< st->count; i++){
-        if(strcmp(st->symbols[i].id,id)==0)
-            return st->symbols[i].type;
+    symtab *parent = st->parent;
+    int exists = search(st, id); 
+    if (exists == -1 && parent != NULL){
+        exists = search(parent, id);
+        return parent->symbols[exists].type;
     }
+    return st->symbols[exists].type;
 }
 
 void create_table(symtab *st, void *parent){

@@ -1,0 +1,11 @@
+int a;
+char c;
+double d;
+func int main()
+{
+	d = 0;
+	d = d();
+	a = 2.9;
+	c = 'a';
+
+}
