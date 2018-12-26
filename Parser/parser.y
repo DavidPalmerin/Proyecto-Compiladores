@@ -9,12 +9,13 @@
 #include <string.h>
 #include <stdbool.h>
 
-
+#include "list.h"
 #include "attributes.h"
 #include "intermediate_code.h"
 #include "backpatch.h"
 #include "symtab.h"
 #include "stack.h"
+
 
 extern int yylex();
 extern int yylineno;
@@ -43,9 +44,9 @@ bool func_decl = false;
 
 
 /* Varaibles para contar las temporales, etiquetas e indices */
-int label;
-int temp;
-int indice;
+int label = 0;
+int temp = 0;
+int indice = 0;
 
 /* Variable para el unico atributo heredado de sentencia prima*/
 labels lfalses;
@@ -56,6 +57,8 @@ symtab global_symbols;
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
 
+/* Etiquetas. */
+labels etiquetas;
 
 /* Funciones auxiliares al análisis semántico y generación de código intermedio */
 void init();
@@ -76,6 +79,9 @@ exp get_numero(numero);
 exp identificador(char *);
 exp asignacion(char *id, exp e);
 
+void gen_cond_goto(char dir[32]);
+void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
+
 /* Funciones auxiliares para la comprobación de tipos */
 int max_type(int t1, int t2);
 char *ampliar(char *dir, int t1, int t2);
@@ -89,14 +95,28 @@ char *newIndex();
 
 %}
 
+%code requires{
+    typedef struct _bools{
+        labels trues;
+        labels falses;
+    } bools;
+}
+
 %union{   
+    int    rel;
     char   id[32];
-    //char   dir[32];
     char*  car;
     char*  cadena;   
     exp    expr;
     type   tipo;
     numero num;
+    labels siguientes;
+    bools  *booleans;
+
+    struct{
+        labels siguientes;
+        bool ifelse;
+    } siguientesp;
 }
 
 %token<car> CAR
@@ -126,10 +146,11 @@ char *newIndex();
 
 
 %type<tipo> tipo
+%type<booleans> condicion
 %type<siguientes> sentencia sentencias
+%type<siguientesp> sentif
 %type<expr> expresion parte_izq
-%type<bools> condicion
-
+%type<rel> relacional
 
 %start programa
 
@@ -141,6 +162,7 @@ programa:       { init(); }
                     /* Guardamos la tabla más global. */
                     stack_peek(&envs, &global_symbols);
                 }
+            condicion
             funciones   {
                             print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
@@ -251,7 +273,8 @@ lista :     lista
                     stack_push(&envs, &curr_env);
                     if (current_type != 5 && struct_decl)
                         struct_dim += current_dim;
-                    printf("lista- >id arreglo\n");};
+                    printf("lista- >id arreglo\n");
+                };
 
 arreglo : LCOR NUMERO RCOR arreglo {
             current_dim *= atoi($2.val);
@@ -347,7 +370,12 @@ sentif : sentencias ELSE sentencias
 
 sentencia :  IF LPAR condicion RPAR sentif
                 {
-                    printf("sentencia -> if ( condicion ) sentencias sentif\n");
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first(&$3->trues));
+                    insert_cuad(&codigo_intermedio, cuad);
                 }
             | WHILE LPAR condicion RPAR sentencias 
                 {
@@ -355,49 +383,49 @@ sentencia :  IF LPAR condicion RPAR sentif
                 }
             | DO sentencias WHILE LPAR condicion RPAR PYC
                 {
-                    printf("sentencias -> do sentencias while ( condicion) ;\n"); 
+                    printf("sentencia -> do sentencias while ( condicion) ;\n"); 
                 } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
                 {
-                    printf("sentencias -> for ( sentencia ; condicion; sentencia ) sentencias\n");
+                    printf("sentencia -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
             | parte_izq ASIG expresion PYC
                 {   
-                    int compatible = max_type($1.type.type, $3.type.type);
+                    /*int compatible = max_type($1.type.type, $3.type.type);
                     if(compatible == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
-                    else {
+                    else {*/
                         cuadrupla cuad;
                         cuad.op  = AS;
                         strcpy(&cuad.res, $1.dir);
                         strcpy(&cuad.op1, $3.dir);
                         insert_cuad(&codigo_intermedio, cuad);
-                        printf("sentencias -> parte_izq = expresion\n");
-                    }
+                        printf("sentencia -> parte_izq = expresion\n");
+                    //}
                 }
             | RETURN expresion PYC
                 {
-                    printf("sentencias -> return expresion ;\n");
+                    printf("sentencia -> return expresion ;\n");
                 }
             | RETURN PYC
                 {
-                    printf("sentencias -> return ;\n");
+                    printf("sentencia -> return ;\n");
                 }
             | LKEY sentencias RKEY
                 {
-                    printf("sentencias -> { sentencias }\n");
+                    printf("sentencia -> { sentencias }\n");
                 }
             | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
                 {
-                    printf("sentencias -> switch ( expresion ) { casos prederterm} \n");
+                    printf("sentencia -> switch ( expresion ) { casos prederterm} \n");
                 }
             | BREAK PYC 
                 {
-                    printf("sentencias -> break ;\n");
+                    printf("sentencia -> break ;\n");
                 }
             | PRINT expresion PYC 
                 {
-                    printf("sentencias -> print expresion ;\n");
+                    printf("sentencia -> print expresion ;\n");
                 }
             ; 
 
@@ -498,7 +526,7 @@ expresion:   expresion
                     {
                         yyerror2("[ERROR] No se encontró el identificador", $1);
                         return 1;
-                    }
+                }
                 }                     
                 LPAR parametros RPAR 
                 {   
@@ -515,25 +543,97 @@ lista_param: lista_param COM expresion
             {printf("lista_param -> lista_param , expresion\n");}
             | expresion {printf("lista_param -> expresion\n");};
 
-condicion: condicion OR condicion  
-            {printf("condicion -> condicion || condicion \n");}
-            | condicion AND condicion 
-            {printf("condicion -> condicion && condicion \n");}
-            | NOT condicion 
-            {printf("condicion -> ! condicion \n");}
-            | LPAR condicion RPAR 
-            {printf("condicion -> ( condicion ) \n");}
-            | expresion relacional expresion
-            {printf("condicion -> expresion rel expresion \n");}
-            | TRUE {printf("condicion -> true \n");}
-            | FALSE {printf("condicion -> false\n");}; 
+condicion:  condicion OR 
+                {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first(&$1->falses));
+                    insert_cuad(&codigo_intermedio, cuad);
+                 } 
+            condicion    
+                {
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&$1->falses, label, &codigo_intermedio);
+                    $$ = (bools*) malloc(sizeof(bools));
+                    $$->trues = merge(&$1->trues, &$4->trues);
+                    $$->falses = $4->falses;
 
-relacional: MAYOR {printf("rel-> >\n");}
-          | MENOR {printf("rel->  <\n");}
-          | MAYOR_IGUAL {printf("rel->  >=\n");}
-          | MENOR_IGUAL {printf("rel->  <=\n");}
-          | DIF {printf("rel->  !=\n");}
-          | IGUAL {printf("rel->  ==\n");};
+                    printf("CURRRENT LABEEEEEEELS");
+                    print_list_labels(&$$->trues);
+                    print_list_labels(&$$->falses);
+                    printf("condicion -> condicion && condicion \n");
+                 }
+            | condicion AND 
+                {
+                    /*
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first($1.falses));
+                    insert_cuad(&codigo_intermedio, cuad);
+                    */
+                }
+              condicion     
+                {
+                    /*
+                    char label[32];
+                    strcpy(label, newLabel());
+                    $$.falses = merge(&$1.falses, &$4.falses);
+                    $$.trues = $4.trues;
+                    backpatch(&$1.trues, label, &codigo_intermedio);
+                    printf("condicion -> condicion && condicion \n");
+                    */
+                }
+            | NOT condicion 
+                {   
+                    /*
+                    $$.falses = $2.trues;
+                    $$.trues  = $2.falses;
+                    printf("condicion -> ! condicion \n");
+                    */
+                }
+            | LPAR condicion RPAR 
+                {
+                    /*
+                    $$.trues = $2.trues;
+                    $$.falses = $2.falses;
+                    */
+                }
+            | expresion relacional expresion
+                {
+                    //Falta ver sus tipooooooooooooooooooos.
+                    printf("condicion -> expresion rel expresion \n");
+                }
+            | TRUE 
+                {   
+                    $$ = (bools*) malloc(sizeof(bools));
+                    char dir[32];
+                    strcpy(dir, newIndex());
+                    $$->trues = create_list(dir);
+                    gen_cond_goto(dir);
+                    printf("condicion -> true \n");
+                }
+            | FALSE 
+                {  
+                    $$ = (bools*) malloc(sizeof(bools));
+                    char dir[32];
+                    strcpy(dir, newIndex());
+                    $$->falses = create_list(dir);
+                    gen_cond_goto(dir);
+                    printf("condicion -> false \n");
+                }
+            | %empty {} ;    
+
+relacional: MAYOR { $$ = GT; printf("rel-> >\n"); }
+          | MENOR { $$ = LT; printf("rel->  <\n");}
+          | MAYOR_IGUAL { $$ = GE; printf("rel->  >=\n");}
+          | MENOR_IGUAL { $$ = LE; printf("rel->  <=\n");}
+          | DIF { $$ = NE; printf("rel->  !=\n");}
+          | IGUAL { $$ = EQ; printf("rel->  ==\n");};
 %%
 
 void yyerror(char *s){
@@ -547,6 +647,7 @@ void yyerror2(char *s, char *n){
 void init()
 {
     create_code(&codigo_intermedio);
+    create_labels(&etiquetas);
 
     stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
     symtab sym_tab;
@@ -632,6 +733,26 @@ char* newTemp(){
     return temporal;
 }
 
+char* newLabel(){
+    char *temporal= (char*) malloc(32*sizeof(char));
+    strcpy(temporal , "L");
+    char num[30];
+    sprintf(num, "%d", label);
+    strcat(temporal, num);
+    label++;
+    return temporal;
+}
+
+char* newIndex(){
+    char *temporal= (char*) malloc(32*sizeof(char));
+    strcpy(temporal , "I");
+    char num[30];
+    sprintf(num, "%d", indice);
+    strcat(temporal, num);
+    indice++;
+    return temporal;
+}
+
 bool exists_main()
 {
     int index = global_symbols.count - 1;
@@ -654,12 +775,47 @@ int max_type(int t1, int t2){
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5) 
             if (t1 < t2) return t2;
-            else return t1;
+            else
+            {
+                return t1;
+            } 
         /*Si no son números -> tipos incompatibles.
          Por ahora no se pude hacer int a char*/    
         return -1;
     } 
 }
+
+void gen_cond_goto(char dir[32])
+{
+    if (strlen(dir) == 0)
+        return;
+    cuadrupla cuad;
+    cuad.op = GOTO;
+    strcpy(cuad.res, dir);
+    strcpy(cuad.op1, "");
+    strcpy(cuad.op2, "");
+    insert_cuad(&codigo_intermedio, cuad);
+}
+
+void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
+{
+    char *t = (char*) malloc(32 * sizeof(char));
+    strcpy(t, newTemp());
+    
+    cuadrupla cuad;
+    cuad.op = op;
+    strcpy(cuad.op1, e1);
+    strcpy(cuad.op2, e2);
+    strcpy(cuad.res, t);
+    insert_cuad(&codigo_intermedio, cuad);
+
+    cuadrupla iff;
+    iff.op  = IFF;
+    strcpy(iff.op1, t);
+    strcpy(iff.res, dir);
+    insert_cuad(&codigo_intermedio, iff);
+}
+
 
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}

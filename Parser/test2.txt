@@ -20,9 +20,9 @@ char tre;
 double pls;
 int rew;
 char array_C[15][3];
-func int foo(int k, int l)
+func int main(int k, int l)
 {
-	int kes;
+/*	int kes;
 	double ples;
 	char totr;
 	int ewerw;
@@ -31,8 +31,9 @@ func int foo(int k, int l)
 	b = 4;
 	tre = 'A';
 	b = a() + rew() + 3 + x() + y() + z();
+*/	if (false ||false ||false || false || true) a = 3;
 }
-
+/*
 func int _foo()
 {
 	int pro;
@@ -42,4 +43,4 @@ func int _foo()
 func int main()
 {
 	a = 3 + 3;
-}
+}*/

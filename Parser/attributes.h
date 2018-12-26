@@ -32,11 +32,6 @@ extern "C" {
         int count;
     } labels;
 
-    // typedef struct _bools{
-    //     labels trues;
-    //     labels falses;
-    // } bools;
-
     char *pop_label(labels*);
     void push_label(labels*, char *l);
     
