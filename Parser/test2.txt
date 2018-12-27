@@ -45,6 +45,9 @@ func int main(int k, int l)
 	a = 9;
 	do a = 12; while (a() < 23);
 	kes = 2323.32;
+	for (a = 0;; a() < 10; a = a() + 1;){
+		a = 2;
+	}
 	tre = 'C';
 }
 /*

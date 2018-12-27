@@ -481,14 +481,57 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.op2, "");
                     strcpy(cuad.res, label2);
                     insert_cuad(&codigo_intermedio, cuad);
-                    
 
                     printf("sentencia -> do sentencias while ( condicion) ;\n"); 
                 } 
-            | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
+            | FOR LPAR sentencia PYC 
                 {
+                    cuadrupla cuad;
+                    char label[32];
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(label, newLabel());
+                    strcpy(cuad.res, label);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    push_label(&lfalses, label);
+                }
+             condicion PYC
+                {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    &$6->trues);
+                    insert_cuad(&codigo_intermedio, cuad);
+                }
+             sentencia RPAR sentencias
+                {   
+                    cuadrupla c;
+                    c.op = GOTO;
+                    strcpy(c.op1, "");
+                    strcpy(c.op2, "");
+                    strcpy(c.res, pop_label(&lfalses));
+                    insert_cuad(&codigo_intermedio, c);
+
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    get_first(&$6->falses));
+                    insert_cuad(&codigo_intermedio, cuad);
+
+                    char label[32], label2[32];
+                    strcpy(label, newLabel());
+                    strcpy(label2, newLabel());
+                    backpatch(&$6->trues, label2, &codigo_intermedio);
+                    backpatch(&$6->falses, label, &codigo_intermedio);
+
                     printf("sentencia -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
+
             | parte_izq ASIG expresion PYC
                 {   
                     int compatible = max_type($1.type.type, $3.type.type);
