@@ -6,11 +6,15 @@ struct {
 	int lll;
 	char por;
 } lol;
+func int _foo()
+{
+	int pro;
+	pro =2;
+}
 func int main()
 {
 	d = 0;
 	d = d();
 	c = 'a';
-	int z;
-
+	//No acepta declaraciones el main
 }

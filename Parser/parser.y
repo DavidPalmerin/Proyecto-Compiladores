@@ -82,7 +82,7 @@ list dimensiones;
 exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
 exp identificador(char *);
-exp asignacion(char *id, exp e);
+exp asignar(exp e1,exp e2);
 
 void gen_cond_goto(char dir[32]);
 void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
@@ -214,7 +214,6 @@ tipo:        VOID   {
                     }
                 LKEY decl RKEY {
                                     $$ = 5;
-                                    //$$.dim  = struct_dim;
                                     printf("tipo -> struct { decl }\n");
                                     del_context(false);
                                 };
@@ -269,7 +268,7 @@ lista :     lista
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
                         return 1;
-                    }                
+                    }                  
 
                     sym symbol;
                     strcpy(symbol.id, $1);
@@ -281,6 +280,7 @@ lista :     lista
                     insert(&curr_env.symbols, symbol);
                     int i = 0;
                     int curr_tam = symbol.type;
+                    
                     while(list_size(&dimensiones)){
                         int temp;
                         list_head(&dimensiones,&temp,1);
@@ -291,14 +291,14 @@ lista :     lista
                         tipo.dim = curr_tam;
                         tipo.base = symbol.type;
                         insert_type(&curr_env.types,tipo);
+                        fprint_table_types(&curr_env.types,contexts);
                     }    
                     list_destroy(&dimensiones);
                     list_new(&dimensiones, 10,NULL);
-                    //fprint_table_types(&curr_env.types,contexts);
+                    
                     stack_push(&envs, &curr_env);
                     if (current_type != 5 && struct_decl){
                         struct_dim += current_dim;
-                        printf("->>>struct:%d\n",struct_dim);
                     }
                     printf("lista- >id arreglo\n");
                 };
@@ -468,16 +468,12 @@ sentencia :  IF LPAR condicion RPAR
             | parte_izq ASIG expresion PYC
                 {   
                     int compatible = max_type($1.type, $3.type);
-                    //if(compatible == -1) 
+                    if(compatible == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
-                    //else {
-                        cuadrupla cuad;
-                        cuad.op  = AS;
-                        strcpy(&cuad.res, $1.dir);
-                        strcpy(&cuad.op1, $3.dir);
-                        insert_cuad(&codigo_intermedio, cuad);
+                    else {
+                        asignar($1,$3);
                         printf("sentencia -> parte_izq = expresion\n");
-                    //}
+                    }
                 }
             | RETURN expresion PYC
                 {
@@ -573,6 +569,7 @@ expresion:   expresion
                 }
             | CAR 
                 {   
+                    $$.type = 1;
                     strcpy($$.dir, $1);
                     printf("expresion -> car %s\n", $1);
                 }
@@ -585,20 +582,19 @@ expresion:   expresion
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
-            | ID     
-                {
+            | ID                      
+                LPAR parametros RPAR 
+                {   
+
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("[ERROR] No se encontró el identificador", $1);
                         return 1;
-                }
-                }                     
-                LPAR parametros RPAR 
-                {   
+                    }
                     strcpy($$.dir, $1);
-                    //Buscar tipo $1.type?
+                    $$.type = get_type(&curr_env.symbols,$1);
                     printf("expresion -> id %s ( parametros )\n", $1);
                 }
             ;
@@ -778,7 +774,7 @@ void add_context(bool func_context)
     my_env.symbols = new_symtab;
     my_env.types = new_typetab;
     my_env.exprs = exprs;
-
+    //fprint_table_types(&my_env.types,contexts);
     stack_push(&envs, &my_env);
     dir = 0;
 }
