@@ -387,7 +387,10 @@ sentencia :  IF LPAR condicion RPAR
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
                 }
-              sentif
+            sentif
+                {
+                    
+                }
                 
             | WHILE LPAR condicion RPAR sentencias 
                 {
@@ -403,10 +406,10 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | parte_izq ASIG expresion PYC
                 {   
-                    /*int compatible = max_type($1.type.type, $3.type.type);
-                    if(compatible == -1) 
+                    int compatible = max_type($1.type.type, $3.type.type);
+                    //if(compatible == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
-                    else {*/
+                    //else {
                         cuadrupla cuad;
                         cuad.op  = AS;
                         strcpy(&cuad.res, $1.dir);

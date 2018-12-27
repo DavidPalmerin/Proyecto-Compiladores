@@ -27,7 +27,7 @@ extern "C" {
 #define LB 13
 #define AS 14
 #define MAX_CODE 1000
-    
+
     typedef struct _cuadrupla{
         int op;
         char op1[32];
