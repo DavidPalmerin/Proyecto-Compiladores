@@ -29,7 +29,7 @@ extern "C" {
 #define AS 15
 #define CT 16
 #define MAX_CODE 1000
-    
+
     typedef struct _cuadrupla{
         int op;
         char op1[32];

@@ -20,7 +20,8 @@ int search(symtab *st, char*id){
 }
 
 int depth_search(symtab *st, char *id)
-{   symtab *parent = st->parent;
+{      
+    symtab *parent = st->parent;
     int exists = search(st, id); 
     if (exists == -1 && parent != NULL)
         return search(parent, id);
@@ -40,25 +41,23 @@ int insert(symtab *st, sym s){
 
 void print_table(symtab* st){    
     int i;
-    printf("POS\tID\tTIPO\tDIR\tDIM\n");    
+    printf("POS\tID\tTIPO\tDIR\n");    
     for(i=0; i < st->count; i++){
-        printf("%d\t%s\t%d\t%d\t%d\n", i,
+        printf("%d\t%s\t%d\t%d\n", i,
         st->symbols[i].id,
-        st->symbols[i].type.type,
-        st->symbols[i].dir,
-        st->symbols[i].type.dim);        
+        st->symbols[i].type,
+        st->symbols[i].dir);        
     }
 }
 
 void fprint_table(symtab* st, FILE *file){    
     int i;
-    fprintf(file,"POS\tID\tTIPO\tDIR\tDIM\n");    
+    fprintf(file,"POS\tID\tTIPO\tDIR\n");    
     for(i=0; i < st->count; i++){
-        fprintf(file, "%d\t%s\t%d\t%d\t%d\n", i, 
-            st->symbols[i].id, 
-            st->symbols[i].type.type, 
-            st->symbols[i].dir,
-            st->symbols[i].type.dim);          
+        fprintf(file, "%d\t%s\t%d\t%d\n", i,
+        st->symbols[i].id, 
+        st->symbols[i].type, 
+        st->symbols[i].dir);        
     }
 }
 
@@ -71,14 +70,12 @@ int get_dir(symtab *st, char* id){
     }
 }
 
-type get_type(symtab* st, char *id){
-    symtab *parent = st->parent;
-    int exists = search(st, id); 
-    if (exists == -1 && parent != NULL){
-        exists = search(parent, id);
-        return parent->symbols[exists].type;
+int get_type(symtab* st, char *id){
+    int i;
+    for(i=0; i< st->count; i++){
+        if(strcmp(st->symbols[i].id,id)==0)
+            return st->symbols[i].type;
     }
-    return st->symbols[exists].type;
 }
 
 void create_table(symtab *st, void *parent){

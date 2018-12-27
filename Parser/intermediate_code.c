@@ -25,6 +25,7 @@ void print_code(ic* code){
     FILE * CODIGO;
     CODIGO = fopen("codigo.ci", "w");
     int i;
+
     for(i=0; i < code->count; i++){
         cuadrupla temporal = code->c[i];
         switch(temporal.op){
@@ -76,9 +77,9 @@ void print_code(ic* code){
                 fprintf(CODIGO, "%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
                 //printf("%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
                 break;
-           case MD:
+            case MD:
                 fprintf(CODIGO, "%s = %s %% %s\n", temporal.res, temporal.op1, temporal.op2);
-                //printf("%s = %s / %s\n", temporal.res, temporal.op1, temporal.op2);
+                //printf("%s = %s %% %s\n", temporal.res, temporal.op1, temporal.op2);
                 break;
             case LB:
                 fprintf(CODIGO, "%s:", temporal.res);
@@ -88,7 +89,7 @@ void print_code(ic* code){
                 fprintf(CODIGO, "%s = %s\n", temporal.res, temporal.op1);
                 //printf("%s = %s\n", temporal.res, temporal.op1);
                 break;
-            case CT:
+             case CT:
                 fprintf(CODIGO, "%s = %s %s\n",  temporal.res, temporal.op1,temporal.op2);
                 //printf("%s = %s %s\n", temporal.res, temporal.op1);
                 break;
