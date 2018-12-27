@@ -28,7 +28,7 @@ func int main(int k, int l)
 	int ewerw;
 	kes = a();
 	a= pls();
-	b = 4 % 1;
+ 	b = 4;
 	tre = 'A';
 	b = a() + rew() + x() + y() + z();
 	if (2 < 3){
@@ -48,6 +48,7 @@ func int main(int k, int l)
 	kes = 2323.32;
 	for (a = 0;; a() < 10; a = a() + 1;){
 		a = 2;
+		los = 3 + rew() + 4 + a();
 	}
 	tre = 'C';
 }
@@ -62,4 +63,3 @@ func int main()
 {
 	a = 3 + 3;
 }*/
-

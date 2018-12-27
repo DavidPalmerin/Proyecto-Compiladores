@@ -4,6 +4,8 @@
  *
  * Created on 3 de diciembre de 2018, 19:59
  */
+#include "symtab.h"
+#include "typetab.h"
 
 #ifndef ATTRIBUTES_H
 #define ATTRIBUTES_H
@@ -11,15 +13,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+    /*
     typedef struct _type{
         int type;
         int dim;
     } type;
-
+    */
     typedef struct _exp{
         char dir[32];
-        type type;
+        int type;
     } exp;
     
     typedef struct _numero{
@@ -31,6 +33,13 @@ extern "C" {
         char label[1000][32];
         int count;
     } labels;
+
+    typedef struct _env
+    {
+        symtab symbols;
+        typetab types;
+        stack exprs;
+    } env;
 
     char *pop_label(labels*);
     void push_label(labels*, char *l);
