@@ -467,7 +467,7 @@ sentencia :  IF LPAR condicion RPAR
                     insert_cuad(&codigo_intermedio, cuad);
                     push_label(&lfalses, label);
                 }
-                sentencias WHILE LPAR condicion RPAR PYC
+                sentencia WHILE LPAR condicion RPAR PYC
                 {
                     char label[32], label2[32];
                     strcpy(label, pop_label(&lfalses));
@@ -506,7 +506,7 @@ sentencia :  IF LPAR condicion RPAR
                     &$6->trues);
                     insert_cuad(&codigo_intermedio, cuad);
                 }
-             sentencia RPAR sentencias
+             sentencia RPAR sentencia
                 {   
                     cuadrupla c;
                     c.op = GOTO;
