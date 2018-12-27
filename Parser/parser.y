@@ -384,6 +384,7 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.op2, "");
                     strcpy(cuad.res, 
                     get_first(&$3->falses));
+                    printf("LABEEEEEEEEL: %s", &$3->falses);
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
                 }
@@ -392,9 +393,35 @@ sentencia :  IF LPAR condicion RPAR
                     
                 }
                 
-            | WHILE LPAR condicion RPAR sentencias 
+            | WHILE LPAR condicion
                 {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first(&$3->trues));
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);
+                }
+             RPAR sentencia
+                {
+                    /*
+                    char label[32], label2[32], temp[32];
+                    strcpy(label, newIndex());
+                    strcpy(label2, newIndex());
+                    strcpy(temp, newTemp());
+                    $$ = $3->falses;
+
+                    cuadrupla cuad;
+                    cuad.op = IF;
+                    strcpy(cuad.op1, temp);
+                    strcpy(cuad.op2, "GOTO");
+                    strcpy(cuad.res, label);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    backpatch(&$3->trues, label, &codigo_intermedio);
+                    backpatch(&$3->falses, label2, &codigo_intermedio);
                     printf("sentencias -> while ( condicion ) sentencias\n");
+                    */
                 }
             | DO sentencias WHILE LPAR condicion RPAR PYC
                 {
@@ -428,6 +455,10 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | LKEY sentencias RKEY
                 {
+                    char label[32];
+                    $$ = $2;
+                    strcpy(label, newLabel());
+                    backpatch(&$2, label, &codigo_intermedio);
                     printf("sentencia -> { sentencias }\n");
                 }
             | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
@@ -571,14 +602,11 @@ condicion:  condicion OR
                 {
                     char label[32];
                     strcpy(label, newLabel());
+                    printf("ETIQUETAAAAAAA: %s", label);
                     backpatch(&$1->falses, label, &codigo_intermedio);
                     $$ = (bools*) malloc(sizeof(bools));
                     $$->trues = merge(&$1->trues, &$4->trues);
                     $$->falses = $4->falses;
-
-                    printf("CURRRENT LABEEEEEEELS");
-                    print_list_labels(&$$->trues);
-                    print_list_labels(&$$->falses);
                     printf("condicion -> condicion && condicion \n");
                  }
             | condicion AND 
