@@ -20,7 +20,7 @@ char tre;
 double pls;
 int rew;
 char array_C[15][3];
-func int foo(int k, int l)
+func int main(int k, int l)
 {
 	int kes;
 	double ples;
@@ -30,9 +30,28 @@ func int foo(int k, int l)
 	a= pls();
 	b = 4 % 1;
 	tre = 'A';
-	b = a() + rew() - 3 + x() * y() / z();
+	b = a() + rew() + x() + y() + z();
+	if (2 < 3){
+		tre = 'R';
+		kes = ewerw();
+		 a = 3;
+		a = kes();
+	}
+	kes = 2;
+	while (a() < 9) {
+		a = x() + y();	
+		a = a() + 1;
+		y = 3 + x();
+	}
+	a = 9;
+	do a = 12; while (a() < 23);
+	kes = 2323.32;
+	for (a = 0;; a() < 10; a = a() + 1;){
+		a = 2;
+	}
+	tre = 'C';
 }
-
+/*
 func int _foo()
 {
 	int pro;
@@ -42,4 +61,5 @@ func int _foo()
 func int main()
 {
 	a = 3 + 3;
-}
+}*/
+

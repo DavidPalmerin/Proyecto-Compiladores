@@ -24,6 +24,7 @@ int insert_cuad(ic* code, cuadrupla c){
 void print_code(ic* code){
     FILE * CODIGO;
     CODIGO = fopen("codigo.ci", "w");
+    
     int i;
     for(i=0; i < code->count; i++){
         cuadrupla temporal = code->c[i];
