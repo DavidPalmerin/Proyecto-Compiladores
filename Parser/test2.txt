@@ -31,14 +31,17 @@ func int main(int k, int l)
  	b = 4;
 	tre = 'A';
 	b = a() + rew() + x() + y() + z();
-	if ( false || false){
+	if (2 < 3){
 		tre = 'R';
 		kes = ewerw();
 		 a = 3;
 		a = kes();
 	}
-/*	while (true) a = 2;
-*/	a = 9;
+	kes = 2;
+	while (2 < 9) {
+		if (34 < 12) a = 223423;
+	}
+	a = 9;
 	kes = 2323.32;
 	tre = 'C';
 }
