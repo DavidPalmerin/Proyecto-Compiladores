@@ -160,7 +160,9 @@ programa:       { init(); }
             decl 
                 { 
                     /* Guardamos la tabla más global. */
-                    stack_peek(&envs, &global_symbols);
+                    env my_env;
+                    stack_peek(&envs, &my_env);
+                    global_symbols = my_env.symbols;
                 }
             condicion
             funciones   {
@@ -366,7 +368,9 @@ sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n"
 
 sentif: ELSE sentencia 
         | %empty 
-            {};
+            {
+               
+            };
 
 sentencia :  IF LPAR condicion RPAR 
                 {
@@ -388,6 +392,13 @@ sentencia :  IF LPAR condicion RPAR
                     get_first(&$3->falses));
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
+
+                    char label[32], label2[32];
+                    strcpy(label, newLabel());
+                    strcpy(label2, newLabel());
+                    backpatch(&$3->trues, label, &codigo_intermedio);
+                    backpatch(&$3->falses, label2, &codigo_intermedio);
+
                 }
             sentif
                 
@@ -415,6 +426,10 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.res, get_first(&$4->trues));
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
+                    
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&$4->trues, label, &codigo_intermedio);
                 }
              RPAR sentencia
                 {
@@ -425,6 +440,7 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(c.res, pop_label(&lfalses));
                     insert_cuad(&codigo_intermedio, c);
 
+
                     cuadrupla cuad;
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
@@ -433,9 +449,40 @@ sentencia :  IF LPAR condicion RPAR
                     get_first(&$4->falses));
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);  
+
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&$4->falses, label, &codigo_intermedio);
                 }
-            | DO sentencias WHILE LPAR condicion RPAR PYC
+            | DO 
                 {
+                    cuadrupla cuad;
+                    char label[32];
+
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(label, newLabel());
+                    strcpy(cuad.res, label);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    push_label(&lfalses, label);
+                }
+                sentencias WHILE LPAR condicion RPAR PYC
+                {
+                    char label[32], label2[32];
+                    strcpy(label, pop_label(&lfalses));
+                    strcpy(label2, newLabel());
+                    backpatch(&$6->trues, label, &codigo_intermedio);
+                    backpatch(&$6->falses, label2, &codigo_intermedio);
+
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, label2);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    
+
                     printf("sentencia -> do sentencias while ( condicion) ;\n"); 
                 } 
             | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
@@ -525,9 +572,9 @@ expresion:   expresion
                     strcpy(t, newTemp());
                     strcpy($$.dir, t);
                     int max = max_type($1.type.type,$3.type.type);
-                    if(max==-1) 
+                    //if(max==-1) 
                         yyerror("Error: Tipos incompatibles.");
-                    else{
+                    //else{
                         cuadrupla cuad;
                         cuad.op = MA;
                         strcpy(cuad.res, $$.dir);
@@ -535,7 +582,7 @@ expresion:   expresion
                         strcpy(cuad.op2, $3.dir);
                         insert_cuad(&codigo_intermedio, cuad);
                         printf("expresion -> expresion + expresion \n");
-                    }
+                    //}
                 }
             | expresion MENOS expresion 
                 {

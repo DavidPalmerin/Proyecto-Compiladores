@@ -38,10 +38,12 @@ func int main(int k, int l)
 		a = kes();
 	}
 	kes = 2;
-	while (2 < 9) {
-		if (34 < 12) a = 223423;
+	while (a() < 9) {
+	
+		a = a() + 1;
 	}
 	a = 9;
+	do a = 12; while (a() < 23);
 	kes = 2323.32;
 	tre = 'C';
 }
