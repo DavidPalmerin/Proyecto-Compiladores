@@ -152,6 +152,7 @@ char *newIndex();
 %type<expr> expresion parte_izq
 %type<rel> relacional
 
+
 %start programa
 
 %%
@@ -164,7 +165,6 @@ programa:       { init(); }
                     stack_peek(&envs, &my_env);
                     global_symbols = my_env.symbols;
                 }
-            condicion
             funciones   {
                             print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
@@ -543,8 +543,8 @@ sentencia :  IF LPAR condicion RPAR
                         strcpy(&cuad.res, $1.dir);
                         strcpy(&cuad.op1, $3.dir);
                         insert_cuad(&codigo_intermedio, cuad);
-                        printf("sentencia -> parte_izq = expresion\n");
                     //}
+                    printf("sentencias -> parte_izq = expresion\n");
                 }
             | RETURN expresion PYC
                 {
@@ -673,7 +673,7 @@ expresion:   expresion
                     {
                         yyerror2("[ERROR] No se encontró el identificador", $1);
                         return 1;
-                }
+                    }
                 }                     
                 LPAR parametros RPAR 
                 {   
@@ -948,8 +948,7 @@ int max_type(int t1, int t2){
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5) 
             if (t1 < t2) return t2;
-            else
-            {
+            else{
                 return t1;
             } 
         /*Si no son números -> tipos incompatibles.
@@ -989,7 +988,6 @@ void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
     insert_cuad(&codigo_intermedio, iff);
 }
 
-
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
             | sentencias {printf("mif -> sentencias\n");};
@@ -1008,23 +1006,4 @@ sentif : ELSE sentencias
 sentif : sentencias ELSE sentencias
         {printf("sentif -> else sentencias\n");}
         | sentencias;
-
-
-
-
-    char label[32], label2[32], temp[32];
-    strcpy(label, newIndex());
-    strcpy(label2, newIndex());
-    strcpy(temp, newTemp());
-    $$ = $3->falses;
-
-    cuadrupla cuad;
-    cuad.op = IF;
-    strcpy(cuad.op1, temp);
-    strcpy(cuad.op2, "GOTO");
-    strcpy(cuad.res, label);
-    insert_cuad(&codigo_intermedio, cuad);
-    backpatch(&$3->trues, label, &codigo_intermedio);
-    backpatch(&$3->falses, label2, &codigo_intermedio);
-    printf("sentencias -> while ( condicion ) sentencias\n");
 */
