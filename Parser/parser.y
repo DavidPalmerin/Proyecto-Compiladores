@@ -364,19 +364,31 @@ parte_arr : LCOR RCOR parte_arr
 sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
             | sentencia {printf("sentencias -> sentencia\n");};
 
-sentif : sentencias ELSE sentencias
-        {printf("sentif -> else sentencias\n");}
-        | sentencias;
+sentif: ELSE sentencia | %empty{};
 
-sentencia :  IF LPAR condicion RPAR sentif
+sentencia :  IF LPAR condicion RPAR 
                 {
                     cuadrupla cuad;
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
                     strcpy(cuad.res, get_first(&$3->trues));
-                    insert_cuad(&codigo_intermedio, cuad);
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);
                 }
+             sentencia
+                {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    get_first(&$3->falses));
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);
+                }
+              sentif
+                
             | WHILE LPAR condicion RPAR sentencias 
                 {
                     printf("sentencias -> while ( condicion ) sentencias\n");
@@ -829,4 +841,10 @@ uif : IF LPAR condicion RPAR sentencias
 sentif : ELSE sentencias
         {printf("sentif -> else sentencias\n");}
         | %prec IFX %empty {};
+
+
+-- Esto lo reconoce el lexer.
+sentif : sentencias ELSE sentencias
+        {printf("sentif -> else sentencias\n");}
+        | sentencias;
 */

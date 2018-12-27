@@ -22,16 +22,18 @@ int rew;
 char array_C[15][3];
 func int main(int k, int l)
 {
-/*	int kes;
-	double ples;
+	int kes;
+/*	double ples;
 	char totr;
 	int ewerw;
 	kes = a();
 	a= pls();
-	b = 4;
+ 	b = 4;
 	tre = 'A';
 	b = a() + rew() + 3 + x() + y() + z();
-*/	if (false ||false ||false || false || true) a = 3;
+*/	if (false || false || false || false) a = 3;
+	a = 9;
+	kes = 2323.32;
 }
 /*
 func int _foo()
