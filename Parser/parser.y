@@ -121,7 +121,6 @@ char *newIndex();
     numero num;
     labels siguientes;
     bools  *booleans;
-
     struct{
         labels siguientes;
         bool ifelse;
@@ -160,7 +159,6 @@ char *newIndex();
 %type<siguientesp> sentif
 %type<expr> expresion parte_izq
 %type<rel> relacional
-
 %start programa
 
 %%
@@ -172,8 +170,8 @@ programa:       { init(); }
                     env my_env;
                     stack_peek(&envs, &my_env);
                     global_symbols = my_env.symbols;
+                    global_types = my_env.types;
 
-                    fprint_table_types(&my_env.types,contexts);
                 }
             condicion
             funciones   {
@@ -245,12 +243,39 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type = current_type;
-                    current_dim = get_tam(&global_types,current_type);
                     symbol.dir  = dir;
                     dir += current_dim;
                     
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
+                                        int i = 0;
+                    int curr_tam = get_tam(&global_types,current_type);
+                    bool primero = true; 
+                    while(list_size(&dimensiones)){
+                        int temp;
+                        list_head(&dimensiones,&temp,1);
+                        type tipo = new_type();
+                        
+                        if(primero)
+                        {
+                            tipo.base = symbol.type;
+                            primero = false;
+                        } 
+                        else tipo.base = curr_env.types.count -1;
+
+                        tipo.dim = temp;
+                        curr_tam *= tipo.dim;
+                        tipo.tam = curr_tam;
+                        
+                        int r = insert_type(&curr_env.types,tipo);
+                        //print_type(tipo);
+                        //fprint_table_types(&curr_env.types,contexts);
+                    
+                    }
+                    primero = false;    
+                    list_destroy(&dimensiones);
+                    list_new(&dimensiones, 10,NULL);
+                    
                     stack_push(&envs, &curr_env);
                     if (struct_decl){
                         struct_dim += current_dim;
@@ -260,10 +285,11 @@ lista :     lista
                         arr.tam = struct_dim;
                         */
                     }
-                 
+                    
                     printf("lista -> lista , id arreglo\n");}
             
-            | ID 
+            | ID {
+                   }
               arreglo
                 {
                     env curr_env;
@@ -278,25 +304,35 @@ lista :     lista
                     strcpy(symbol.id, $1);
                     symbol.type = current_type;
                     symbol.dir  = dir;
-
                     dir += current_dim;
+
+           
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
-                    int i = 0;
-                    int curr_tam = symbol.type;
-                    
+                    int curr_tam = get_tam(&global_types,current_type);
+                    bool primero = true; 
                     while(list_size(&dimensiones)){
                         int temp;
                         list_head(&dimensiones,&temp,1);
-                        printf("Curr dim : %d\n",temp);
                         type tipo = new_type();
+                        
+                        if(primero)
+                        {
+                            tipo.base = symbol.type;
+                            primero = false;
+                        } 
+                        else tipo.base = curr_env.types.count -1;
+
                         tipo.dim = temp;
                         curr_tam *= tipo.dim;
-                        tipo.dim = curr_tam;
-                        tipo.base = symbol.type;
-                        insert_type(&curr_env.types,tipo);
-                        fprint_table_types(&curr_env.types,contexts);
-                    }    
+                        tipo.tam = curr_tam;
+                        
+                        int r = insert_type(&curr_env.types,tipo);
+                        //print_type(tipo);
+                        //fprint_table_types(&curr_env.types,contexts);
+                    
+                    }
+                    primero = false;    
                     list_destroy(&dimensiones);
                     list_new(&dimensiones, 10,NULL);
                     
@@ -312,12 +348,13 @@ arreglo : LCOR NUMERO RCOR arreglo
                 int num = atoi($2.val);
                 current_dim *= num;
                 list_append(&dimensiones, &num);
-                //printf("  ->>>arr:%d \n",num);
                 printf("arreglo -> id arreglo\n");
                 
             }
             | %empty 
-                {};
+                {
+                    
+                };
 
 funciones : FUNC 
             tipo ID LPAR
@@ -399,8 +436,14 @@ parte_arr : LCOR RCOR parte_arr
             {printf("parte_arr -> [] parte_arr\n");}
             | %empty {};
 
-sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
-            | sentencia {printf("sentencias -> sentencia\n");};
+sentencias : sentencias sentencia 
+            {    
+                printf("sentencias -> sentencias sentencia\n");
+            }
+            | sentencia 
+            {
+                 printf("sentencias -> sentencia\n");
+            };
 
 sentif: ELSE sentencia | %empty{};
 
@@ -433,6 +476,10 @@ sentencia :  IF LPAR condicion RPAR
 
                 }
             sentif
+            {
+
+
+            }
                 
             | WHILE LPAR
                 {
@@ -589,8 +636,13 @@ sentencia :  IF LPAR condicion RPAR
                     backpatch(&$2, label, &codigo_intermedio);
                     printf("sentencia -> { sentencias }\n");
                 }
-            | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
+            | SWITCH LPAR expresion RPAR
                 {
+                   
+                }
+             LKEY casos predeterm RKEY
+                {
+
                     printf("sentencia -> switch ( expresion ) { casos prederterm} \n");
                 }
             | BREAK PYC 
@@ -604,7 +656,14 @@ sentencia :  IF LPAR condicion RPAR
             ; 
 
 casos : CASE PUNES NUMERO sentencia casos
-        {printf("casos -> case : sentencia casos\n");}
+        {
+            /*
+            char label[32];
+            $$ = $4;
+            strcpy(label, newLabel());
+            backpatch(&$2, label, &codigo_intermedio);;    
+            */
+            printf("casos -> case : sentencia casos\n");}
             | %empty {};
 
 predeterm : DEFAULT PUNES sentencia
@@ -837,7 +896,7 @@ void init()
     create_code(&codigo_intermedio);
     create_labels(&etiquetas);
 
-    stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
+    stack_new(&envs, sizeof(typetab) + sizeof(symtab) , NULL);
     symtab sym_tab;
     create_table(&sym_tab, NULL);
     sym_tab.parent = NULL;
@@ -850,7 +909,6 @@ void init()
 
     env initial_env;
     initial_env.symbols = sym_tab;
-    initial_env.exprs   = exprs;
     initial_env.types = type_tab;
     global_types = initial_env.types;
     stack_push(&envs, &initial_env);
@@ -869,6 +927,7 @@ void print_context(char *s1, char *s2)
     stack_peek(&envs, &curr_env);
     fprintf(contexts, "~ %s %s\n", s1, s2);
     fprint_table(&curr_env.symbols, contexts);
+    fprint_table_types(&curr_env.types,contexts);
     fprintf(contexts, "\n");
 }
 
@@ -891,17 +950,11 @@ void add_context(bool func_context)
         create_table(&new_symtab, NULL);
         create_table_types(&new_typetab, NULL);
     }
-
-
-    /* Nueva pila para expresiones. */
-    stack exprs;
-    stack_new(&exprs, 32 * sizeof(char), NULL);
-
     /* Finalmente, creamos el nuevo ambiente. */
     env my_env;
     my_env.symbols = new_symtab;
     my_env.types = new_typetab;
-    my_env.exprs = exprs;
+
     //fprint_table_types(&my_env.types,contexts);
     stack_push(&envs, &my_env);
     dir = 0;
