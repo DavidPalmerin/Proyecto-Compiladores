@@ -28,7 +28,7 @@ func int main(int k, int l)
 	int ewerw;
 	kes = a();
 	a= pls();
- 	b = 4;
+ 	b = -.231239124;
 	tre = 'A';
 	b = a() + rew() + x() + y() + z();
 	if (2 < 3){
