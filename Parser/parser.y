@@ -245,7 +245,7 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type = current_type;
-                    current_dim = get_dim(&curr_env.types,current_type);
+                    current_dim = get_tam(&global_types,current_type);
                     symbol.dir  = dir;
                     dir += current_dim;
                     
