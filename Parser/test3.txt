@@ -1,5 +1,5 @@
 int a[3][4];
-char c;
+char c12345093ijslkjksldkasdasd12345a;
 double d;
 struct {
 	int rk;
@@ -15,6 +15,6 @@ func int main()
 {
 	d = 0;
 	d = d();
-	c = 'a';
+	a = 'a';
 	//No acepta declaraciones el main
 }

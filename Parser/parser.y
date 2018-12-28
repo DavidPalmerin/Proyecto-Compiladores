@@ -78,6 +78,7 @@ stack envs;
 
 /* Lista para las dimensiones de un arreglo.*/
 list dimensiones;
+list asig_dims;
 
 exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
@@ -161,7 +162,7 @@ char *newIndex();
 
 %%
 
-programa:       { init(); }
+programa:   { init(); }
             decl 
                 { 
                     /* Guardamos la tabla más global. */
@@ -241,7 +242,7 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type = current_type;
-                    current_dim = get_dim(&curr_env.types,current_type);
+                    current_dim = get_tam(&global_types,current_type);
                     symbol.dir  = dir;
                     dir += current_dim;
                     
