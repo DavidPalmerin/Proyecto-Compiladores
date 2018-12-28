@@ -41,6 +41,7 @@ extern "C" {
     int get_tam(typetab* tt, int pos);
     int get_dim(typetab* tt, int pos);
     int get_base(typetab* tt, int pos);
+    void print_type(type t);
     
 #ifdef __cplusplus
 }

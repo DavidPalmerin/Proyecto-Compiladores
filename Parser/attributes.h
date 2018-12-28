@@ -38,7 +38,6 @@ extern "C" {
     {
         symtab symbols;
         typetab types;
-        stack exprs;
     } env;
 
     char *pop_label(labels*);

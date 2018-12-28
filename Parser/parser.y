@@ -48,6 +48,7 @@ bool func_decl = false;
 int label = 0;
 int temp = 0;
 int indice = 0;
+
 int index_dim = 0;
 
 /* Variable para el unico atributo heredado de sentencia prima*/
@@ -78,12 +79,14 @@ stack envs;
 
 /* Lista para las dimensiones de un arreglo.*/
 list dimensiones;
-list asig_dims;
 
 exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
 exp identificador(char *);
 exp asignar(exp e1,exp e2);
+
+void gen_cond_goto(char dir[32]);
+void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
 
 void gen_cond_goto(char dir[32]);
 void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
@@ -118,7 +121,6 @@ char *newIndex();
     numero num;
     labels siguientes;
     bools  *booleans;
-
     struct{
         labels siguientes;
         bool ifelse;
@@ -157,19 +159,18 @@ char *newIndex();
 %type<siguientesp> sentif
 %type<expr> expresion parte_izq
 %type<rel> relacional
-
 %start programa
 
 %%
 
-programa:   { init(); }
+programa:       { init(); }
             decl 
                 { 
                     /* Guardamos la tabla más global. */
                     env my_env;
                     stack_peek(&envs, &my_env);
                     global_symbols = my_env.symbols;
-                    fprint_table_types(&my_env.types,contexts);
+                    global_types = my_env.types;
 
                 }
             condicion
@@ -242,12 +243,39 @@ lista :     lista
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type = current_type;
-                    current_dim = get_tam(&global_types,current_type);
                     symbol.dir  = dir;
                     dir += current_dim;
                     
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
+                                        int i = 0;
+                    int curr_tam = get_tam(&global_types,current_type);
+                    bool primero = true; 
+                    while(list_size(&dimensiones)){
+                        int temp;
+                        list_head(&dimensiones,&temp,1);
+                        type tipo = new_type();
+                        
+                        if(primero)
+                        {
+                            tipo.base = symbol.type;
+                            primero = false;
+                        } 
+                        else tipo.base = curr_env.types.count;
+
+                        tipo.dim = temp;
+                        curr_tam *= tipo.dim;
+                        tipo.tam = curr_tam;
+                        
+                        int r = insert_type(&curr_env.types,tipo);
+                        //print_type(tipo);
+                        //fprint_table_types(&curr_env.types,contexts);
+                    
+                    }
+                    primero = false;    
+                    list_destroy(&dimensiones);
+                    list_new(&dimensiones, 10,NULL);
+                    
                     stack_push(&envs, &curr_env);
                     if (struct_decl){
                         struct_dim += current_dim;
@@ -257,10 +285,11 @@ lista :     lista
                         arr.tam = struct_dim;
                         */
                     }
-                 
+                    
                     printf("lista -> lista , id arreglo\n");}
             
-            | ID 
+            | ID {
+                   }
               arreglo
                 {
                     env curr_env;
@@ -275,25 +304,35 @@ lista :     lista
                     strcpy(symbol.id, $1);
                     symbol.type = current_type;
                     symbol.dir  = dir;
-
                     dir += current_dim;
+
+           
                     stack_pop(&envs, &curr_env);
                     insert(&curr_env.symbols, symbol);
-                    int i = 0;
-                    int curr_tam = symbol.type;
-                    
+                    int curr_tam = get_tam(&global_types,current_type);
+                    bool primero = true; 
                     while(list_size(&dimensiones)){
                         int temp;
                         list_head(&dimensiones,&temp,1);
-                        printf("Curr dim : %d\n",temp);
                         type tipo = new_type();
+                        
+                        if(primero)
+                        {
+                            tipo.base = symbol.type;
+                            primero = false;
+                        } 
+                        else tipo.base = curr_env.types.count;
+
                         tipo.dim = temp;
                         curr_tam *= tipo.dim;
-                        tipo.dim = curr_tam;
-                        tipo.base = symbol.type;
-                        insert_type(&curr_env.types,tipo);
-                        fprint_table_types(&curr_env.types,contexts);
-                    }    
+                        tipo.tam = curr_tam;
+                        
+                        int r = insert_type(&curr_env.types,tipo);
+                        //print_type(tipo);
+                        //fprint_table_types(&curr_env.types,contexts);
+                    
+                    }
+                    primero = false;    
                     list_destroy(&dimensiones);
                     list_new(&dimensiones, 10,NULL);
                     
@@ -309,12 +348,13 @@ arreglo : LCOR NUMERO RCOR arreglo
                 int num = atoi($2.val);
                 current_dim *= num;
                 list_append(&dimensiones, &num);
-                //printf("  ->>>arr:%d \n",num);
                 printf("arreglo -> id arreglo\n");
                 
             }
             | %empty 
-                {};
+                {
+                    
+                };
 
 funciones : FUNC 
             tipo ID LPAR
@@ -396,8 +436,14 @@ parte_arr : LCOR RCOR parte_arr
             {printf("parte_arr -> [] parte_arr\n");}
             | %empty {};
 
-sentencias : sentencias sentencia {printf("sentencias -> sentencias sentencia\n");}
-            | sentencia {printf("sentencias -> sentencia\n");};
+sentencias : sentencias sentencia 
+            {    
+                printf("sentencias -> sentencias sentencia\n");
+            }
+            | sentencia 
+            {
+                 printf("sentencias -> sentencia\n");
+            };
 
 sentif: ELSE sentencia | %empty{};
 
@@ -419,53 +465,151 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.op2, "");
                     strcpy(cuad.res, 
                     get_first(&$3->falses));
-                    printf("LABEEEEEEEEL: %s", &$3->falses);
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
+
+                    char label[32], label2[32];
+                    strcpy(label, newLabel());
+                    strcpy(label2, newLabel());
+                    backpatch(&$3->trues, label, &codigo_intermedio);
+                    backpatch(&$3->falses, label2, &codigo_intermedio);
+
                 }
             sentif
-                {
-                    
-                }
+            {
+
+
+            }
                 
-            | WHILE LPAR condicion
+            | WHILE LPAR
+                {
+                    cuadrupla cuad;
+                    char label[32];
+
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(label, newLabel());
+                    strcpy(cuad.res, label);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    
+                    /*Guarda la etiqueta de la condición*/
+                    push_label(&lfalses, label);
+                }
+             condicion
                 {
                     cuadrupla cuad;
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, get_first(&$3->trues));
+                    strcpy(cuad.res, get_first(&$4->trues));
                     if (strcmp(cuad.res, "") != 0)
                         insert_cuad(&codigo_intermedio, cuad);
+                    
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&$4->trues, label, &codigo_intermedio);
                 }
              RPAR sentencia
                 {
-                    /*
-                    char label[32], label2[32], temp[32];
-                    strcpy(label, newIndex());
-                    strcpy(label2, newIndex());
-                    strcpy(temp, newTemp());
-                    $$ = $3->falses;
+                    cuadrupla c;
+                    c.op = GOTO;
+                    strcpy(c.op1, "");
+                    strcpy(c.op2, "");
+                    strcpy(c.res, pop_label(&lfalses));
+                    insert_cuad(&codigo_intermedio, c);
 
                     cuadrupla cuad;
-                    cuad.op = IF;
-                    strcpy(cuad.op1, temp);
-                    strcpy(cuad.op2, "GOTO");
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    get_first(&$4->falses));
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);  
+
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&$4->falses, label, &codigo_intermedio);
+                }
+            | DO 
+                {
+                    cuadrupla cuad;
+                    char label[32];
+
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(label, newLabel());
                     strcpy(cuad.res, label);
                     insert_cuad(&codigo_intermedio, cuad);
-                    backpatch(&$3->trues, label, &codigo_intermedio);
-                    backpatch(&$3->falses, label2, &codigo_intermedio);
-                    printf("sentencias -> while ( condicion ) sentencias\n");
-                    */
+                    push_label(&lfalses, label);
                 }
-            | DO sentencias WHILE LPAR condicion RPAR PYC
+            sentencia WHILE LPAR condicion RPAR PYC
                 {
+                    char label[32], label2[32];
+                    strcpy(label, pop_label(&lfalses));
+                    strcpy(label2, newLabel());
+                    backpatch(&$6->trues, label, &codigo_intermedio);
+                    backpatch(&$6->falses, label2, &codigo_intermedio);
+
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, label2);
+                    insert_cuad(&codigo_intermedio, cuad);
+
                     printf("sentencia -> do sentencias while ( condicion) ;\n"); 
                 } 
-            | FOR LPAR sentencia PYC condicion PYC sentencia RPAR sentencias
+            | FOR LPAR sentencia PYC 
                 {
+                    cuadrupla cuad;
+                    char label[32];
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(label, newLabel());
+                    strcpy(cuad.res, label);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    push_label(&lfalses, label);
+                }
+             condicion PYC
+                {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    &$6->trues);
+                    insert_cuad(&codigo_intermedio, cuad);
+                }
+             sentencia RPAR sentencia
+                {   
+                    cuadrupla c;
+                    c.op = GOTO;
+                    strcpy(c.op1, "");
+                    strcpy(c.op2, "");
+                    strcpy(c.res, pop_label(&lfalses));
+                    insert_cuad(&codigo_intermedio, c);
+
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, 
+                    get_first(&$6->falses));
+                    insert_cuad(&codigo_intermedio, cuad);
+
+                    char label[32], label2[32];
+                    strcpy(label, newLabel());
+                    strcpy(label2, newLabel());
+                    backpatch(&$6->trues, label2, &codigo_intermedio);
+                    backpatch(&$6->falses, label, &codigo_intermedio);
+
                     printf("sentencia -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
+
             | parte_izq ASIG expresion PYC
                 {   
                     int compatible = max_type($1.type, $3.type);
@@ -492,8 +636,13 @@ sentencia :  IF LPAR condicion RPAR
                     backpatch(&$2, label, &codigo_intermedio);
                     printf("sentencia -> { sentencias }\n");
                 }
-            | SWITCH LPAR expresion RPAR LKEY casos predeterm RKEY
+            | SWITCH LPAR expresion RPAR
                 {
+                   
+                }
+             LKEY casos predeterm RKEY
+                {
+
                     printf("sentencia -> switch ( expresion ) { casos prederterm} \n");
                 }
             | BREAK PYC 
@@ -507,7 +656,14 @@ sentencia :  IF LPAR condicion RPAR
             ; 
 
 casos : CASE PUNES NUMERO sentencia casos
-        {printf("casos -> case : sentencia casos\n");}
+        {
+            /*
+            char label[32];
+            $$ = $4;
+            strcpy(label, newLabel());
+            backpatch(&$2, label, &codigo_intermedio);;    
+            */
+            printf("casos -> case : sentencia casos\n");}
             | %empty {};
 
 predeterm : DEFAULT PUNES sentencia
@@ -620,7 +776,6 @@ condicion:  condicion OR
                 {
                     char label[32];
                     strcpy(label, newLabel());
-                    printf("ETIQUETAAAAAAA: %s", label);
                     backpatch(&$1->falses, label, &codigo_intermedio);
                     $$ = (bools*) malloc(sizeof(bools));
                     $$->trues = merge(&$1->trues, &$4->trues);
@@ -666,7 +821,38 @@ condicion:  condicion OR
                 }
             | expresion relacional expresion
                 {
-                    //Falta ver sus tipooooooooooooooooooos.
+                    char i[32];
+                    char i2[32];
+                    char temp[32];
+                    strcpy(i, newIndex());
+                    strcpy(i2, newIndex());
+                    strcpy(temp, newTemp());
+
+                    $$ = (bools*) malloc(sizeof(bools));
+                    $$->trues = create_list(i);
+                    $$->falses = create_list(i2);
+
+                    cuadrupla c, c1, c2;
+                    
+                    c.op = $2;
+                    strcpy(c.op1, $1.dir);
+                    strcpy(c.op2, $3.dir);
+                    strcpy(c.res, temp);
+
+                    c1.op = IFF;
+                    strcpy(c1.op1, temp);
+                    strcpy(c1.op2, "GOTO");
+                    strcpy(c1.res, i);
+
+                    c2.op = GOTO;
+                    strcpy(c2.op1, "");
+                    strcpy(c2.op2, "");
+                    strcpy(c2.res, i2);
+
+                    insert_cuad(&codigo_intermedio, c);
+                    insert_cuad(&codigo_intermedio, c1);
+                    insert_cuad(&codigo_intermedio, c2);
+
                     printf("condicion -> expresion rel expresion \n");
                 }
             | TRUE 
@@ -710,7 +896,7 @@ void init()
     create_code(&codigo_intermedio);
     create_labels(&etiquetas);
 
-    stack_new(&envs, sizeof(symtab) + sizeof(stack), NULL);
+    stack_new(&envs, sizeof(typetab) + sizeof(symtab) , NULL);
     symtab sym_tab;
     create_table(&sym_tab, NULL);
     sym_tab.parent = NULL;
@@ -723,7 +909,6 @@ void init()
 
     env initial_env;
     initial_env.symbols = sym_tab;
-    initial_env.exprs   = exprs;
     initial_env.types = type_tab;
     global_types = initial_env.types;
     stack_push(&envs, &initial_env);
@@ -742,6 +927,7 @@ void print_context(char *s1, char *s2)
     stack_peek(&envs, &curr_env);
     fprintf(contexts, "~ %s %s\n", s1, s2);
     fprint_table(&curr_env.symbols, contexts);
+    fprint_table_types(&curr_env.types,contexts);
     fprintf(contexts, "\n");
 }
 
@@ -764,17 +950,11 @@ void add_context(bool func_context)
         create_table(&new_symtab, NULL);
         create_table_types(&new_typetab, NULL);
     }
-
-
-    /* Nueva pila para expresiones. */
-    stack exprs;
-    stack_new(&exprs, 32 * sizeof(char), NULL);
-
     /* Finalmente, creamos el nuevo ambiente. */
     env my_env;
     my_env.symbols = new_symtab;
     my_env.types = new_typetab;
-    my_env.exprs = exprs;
+
     //fprint_table_types(&my_env.types,contexts);
     stack_push(&envs, &my_env);
     dir = 0;
@@ -851,7 +1031,9 @@ int max_type(int t1, int t2){
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5) 
             if (t1 < t2) return t2;
-            else return t1;
+            else{
+                return t1;
+            } 
         /*Si no son números -> tipos incompatibles.
          Por ahora no se pude hacer int a char*/    
         return -1;
@@ -1000,7 +1182,6 @@ void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
     strcpy(iff.res, dir);
     insert_cuad(&codigo_intermedio, iff);
 }
-
 
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}

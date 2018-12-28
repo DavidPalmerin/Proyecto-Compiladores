@@ -1,6 +1,6 @@
-int a[3][4];
-char c12345093ijslkjksldkasdasd12345a;
-double d;
+int ent, a[3][4];
+char c[2];
+double d[4];
 struct {
 	int rk;
 	int lll;
@@ -11,10 +11,14 @@ func int _foo()
 	int pro;
 	pro =2;
 }
-func int main()
+func int main(int j)
 {
-	d = 0;
+
+	int holi;
+	/*d = 0;
+
 	d = d();
-	a = 'a';
-	//No acepta declaraciones el main
+
+	c = 'a';*/
+	holi = 8;
 }

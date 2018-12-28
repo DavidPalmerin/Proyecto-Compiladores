@@ -38,10 +38,11 @@ type depth_search_type(typetab *tt, int pos)
 
 
 int insert_type(typetab *tt, type t){
-    if(t.type < 5)
+    if(t.base > tt->count)
         return -1;
     tt->types[tt->count] = t;
-    tt->count++;        
+    tt->count++;  
+    printf("Se guardó tipo.\n");      
     return 1;
 }
 
@@ -67,6 +68,16 @@ void fprint_table_types(typetab* tt, FILE *file){
             tt->types[i].dim,
             tt->types[i].base);          
     }
+}
+
+void print_type(type t){
+   // if (tt->count < i)
+    printf("TIPO: %d\t%d\t%d\t%d\n", 
+        t.type, 
+        t.tam, 
+        t.dim,
+        t.base);
+   // else printf("Error: No existe tipo.\n");          
 }
 
 int get_type_(typetab* tt, int pos){
