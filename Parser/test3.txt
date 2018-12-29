@@ -1,6 +1,7 @@
-int ent, a[3][4];
+int ent, a[2][3][4];
 char c[2];
-double d[4];
+float f;
+double d;
 struct {
 	int rk;
 	int lll;
@@ -10,15 +11,16 @@ func int _foo()
 {
 	int pro;
 	pro =2;
+	c[1.0] = 'j';
 }
 func int main(int j)
 {
 
 	int holi;
-	/*d = 0;
-
-	d = d();
-
-	c = 'a';*/
+	c[0] = 'c';
+	a[1][2][3] = 10;	
+	f = 4;
+	d = f();
 	holi = 8;
+	palmi = 9;
 }

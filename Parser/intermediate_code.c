@@ -90,11 +90,15 @@ void print_code(ic* code){
                 fprintf(CODIGO, "%s = %s\n", temporal.res, temporal.op1);
                 //printf("%s = %s\n", temporal.res, temporal.op1);
                 break;
-             case CT:
+            case CT:
                 fprintf(CODIGO, "%s = %s %s\n",  temporal.res, temporal.op1,temporal.op2);
                 //printf("%s = %s %s\n", temporal.res, temporal.op1);
                 break;
-        }        
+            case AS_ARR:
+                fprintf(CODIGO, "%s = %s [ %s ] \n",  temporal.res, temporal.op1,temporal.op2);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
+                break;
+        }      
     }
     fclose(CODIGO);
 }

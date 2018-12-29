@@ -30,7 +30,6 @@ type depth_search_type(typetab *tt, int pos)
     type exists = tt->types[pos]; 
     if (exists.type == 0 && parent != NULL)
         exists = parent->types[pos];
-    printf("pos = %d,tipoooo-> %d\n",pos,exists.type );
     return exists;
     
     //return tt->types[pos];
@@ -42,7 +41,7 @@ int insert_type(typetab *tt, type t){
         return -1;
     tt->types[tt->count] = t;
     tt->count++;  
-    printf("Se guardó tipo.\n");      
+    //printf("Se guardó tipo.\n");      
     return 1;
 }
 
@@ -86,8 +85,6 @@ int get_type_(typetab* tt, int pos){
 }
 
 int get_tam(typetab* tt, int pos){
-    //type t = depth_search_type(tt, pos);
-    //return t.tam;
     int tam = tt->types[pos].tam;
     if(tam == 0){
         typetab *parent = tt->parent;
@@ -97,13 +94,21 @@ int get_tam(typetab* tt, int pos){
 }
 
 int get_dim(typetab* tt, int pos){
-    type t = depth_search_type(tt, pos);
-    return t.dim;
+    int dim = tt->types[pos].dim;
+    if(dim == 0){
+        typetab *parent = tt->parent;
+        dim = parent->types[pos].dim;
+    }
+    return dim;
 }
 
 int get_base(typetab* tt, int pos){
-    type t = depth_search_type(tt, pos);
-    return t.base;
+    int base = tt->types[pos].base;
+    if(base == 0){
+        typetab *parent = tt->parent;
+        base = parent->types[pos].base;
+    }
+    return base;
 }
 void create_table_types(typetab *tt, void *parent){
     // Tipos base
