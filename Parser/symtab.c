@@ -86,4 +86,44 @@ void create_table(symtab *st, void *parent){
     st->parent = parent;
 }
 
+void create_funtab(funtab *tab){
+    tab->count = 0;
+}
+
+int insert_fun(funtab *tab, funrec rec){
+    if (tab->count >= 1000)
+        return -1;
+
+    tab->funs[tab->count] = rec;
+    tab->count += 1;
+    return 1;
+}
+
+void print_funtable(funtab* st){    
+    int i;
+    printf("ID\tPARAMS\t COUNTER\n");    
+    for(i=0; i < st->count; i++){
+        printf("%s\t%d\t%d\n", st->funs[i].id,
+        st->funs[i].params, st->funs[i].counter);        
+    }
+
+}
+
+int is_function(funtab *tab, char id[32])
+{
+    int i;
+    for (i = 0; i < tab->count; i++)
+        if (strcmp(tab->funs[i].id, id) == 0)
+            return 1;
+    return 0;
+}
+
+funrec* get_rec(funtab *tab, char id[32])
+{
+    int i;
+    for (i = 0; i < tab->count; i++)
+        if (strcmp(tab->funs[i].id, id) == 0)
+            return &tab->funs[i];
+}
+
 

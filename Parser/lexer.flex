@@ -24,10 +24,10 @@
 
 id      [_a-zA-Z][_a-zA-Z0-9]{0,30}
 digito 	[0-9]
-int    	[\-+]?[0-9]+
+int    	[\-]?[0-9]+
 char    \'[a-zA-Z]\'
-float   [\-+]?[0-9]*\.{digito}{1,7}
-double  [\-+]?[0-9]*\.{digito}{8,16}
+float   [\-]?[0-9]*\.{digito}{1,7}
+double  [\-]?[0-9]*\.{digito}{8,16}
 cadena  \"[^"]*\"
 espacio [ \t]
 

@@ -60,6 +60,13 @@ symtab global_symbols;
 /* Variable para la tabla de tipos*/
 typetab global_types;
 
+/* Variable para la tabla de funciones. */
+funtab global_funcs;
+int    num_params = 0;
+int    call_params = 0;
+char   curr_function[32];
+stack  func_calls;
+
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
 
@@ -73,6 +80,9 @@ void add_context(bool func_context);
 void del_context(bool context);
 bool exists_main();
 void print_context(char *s1, char *s2);
+void call_function(exp *e);
+void insert_sym(char id[32], env curr_env, int tipo);
+
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -117,7 +127,8 @@ char *newIndex();
     char*  car;
     char*  cadena;   
     exp    expr;
-    int   tipo;
+    int    tipo;
+    bool   args;
     numero num;
     labels siguientes;
     bools  *booleans;
@@ -159,6 +170,8 @@ char *newIndex();
 %type<siguientesp> sentif
 %type<expr> expresion parte_izq
 %type<rel> relacional
+%type<args> parametros;
+
 %start programa
 
 %%
@@ -173,7 +186,6 @@ programa:       { init(); }
                     global_types = my_env.types;
 
                 }
-            condicion
             funciones   {
                             print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
@@ -240,51 +252,7 @@ lista :     lista
                         return 1;
                     }                    
 
-                    sym symbol;
-                    strcpy(symbol.id, $3);
-                    symbol.type = current_type;
-                    symbol.dir  = dir;
-                    dir += current_dim;
-                    
-                    stack_pop(&envs, &curr_env);
-                    insert(&curr_env.symbols, symbol);
-                                        int i = 0;
-                    int curr_tam = get_tam(&global_types,current_type);
-                    bool primero = true; 
-                    while(list_size(&dimensiones)){
-                        int temp;
-                        list_head(&dimensiones,&temp,1);
-                        type tipo = new_type();
-                        
-                        if(primero)
-                        {
-                            tipo.base = symbol.type;
-                            primero = false;
-                        } 
-                        else tipo.base = curr_env.types.count -1;
-
-                        tipo.dim = temp;
-                        curr_tam *= tipo.dim;
-                        tipo.tam = curr_tam;
-                        
-                        int r = insert_type(&curr_env.types,tipo);
-                        //print_type(tipo);
-                        //fprint_table_types(&curr_env.types,contexts);
-                    
-                    }
-                    primero = false;    
-                    list_destroy(&dimensiones);
-                    list_new(&dimensiones, 10,NULL);
-                    
-                    stack_push(&envs, &curr_env);
-                    if (struct_decl){
-                        struct_dim += current_dim;
-                         printf("->>>struct:%d\n",struct_dim);
-                        /*type arr = new_type();
-                        arr.base = symbol.type;
-                        arr.tam = struct_dim;
-                        */
-                    }
+                    insert_sym($3, curr_env, current_type);
                     
                     printf("lista -> lista , id arreglo\n");}
             
@@ -359,6 +327,13 @@ arreglo : LCOR NUMERO RCOR arreglo
 funciones : FUNC 
             tipo ID LPAR
                 {
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, $3);
+                    insert_cuad(&codigo_intermedio, cuad);
+
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (search(&curr_env.symbols, $3) != -1)
@@ -373,6 +348,16 @@ funciones : FUNC
              RPAR LKEY  decl sentencias RKEY 
                 {
                     print_context("Contexto local de: ", $3);
+
+                    env fun_env;
+                    stack_peek(&envs, &fun_env);
+
+                    funrec reg;
+                    strcpy(reg.id, $3);
+                    reg.context = &fun_env.symbols;
+                    reg.params = num_params;
+                    reg.counter = 0;
+                    insert_fun(&global_funcs, reg);
 
                     int func_tam = dir;
                     del_context(false);
@@ -393,12 +378,16 @@ funciones : FUNC
 
                     global_symbols = curr_env.symbols;
                     func_decl = false;
+                    num_params = 0;
+                    print_funtable(&global_funcs);
                 }
              funciones 
                 {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
             | %empty    {
                             if (!exists_main())
                                 return 1;
+                            print_funtable(&global_funcs);
+                            num_params = 0;
                         };
 
 argumentos : lista_args 
@@ -417,6 +406,12 @@ lista_args : lista_args COM tipo ID parte_arr
                         yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $4);
                         return 1;
                     }
+
+                    insert_sym($4, curr_env, $3);
+
+                    /* Variable para funciones. */
+                    num_params += 1;
+
                     printf("lista_args -> lista_args , tipo id parte_arr\n");
                 }
             | tipo ID parte_arr 
@@ -429,7 +424,14 @@ lista_args : lista_args COM tipo ID parte_arr
                             yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $2);
                             return 1;
                         }
+                        
+                        insert_sym($2, curr_env, $1);
+
+                        /* Variable para funciones. */
+                        num_params += 1;
+                        
                         printf("lista_args -> tipo id parte_arr\n");
+
                     }
 
 parte_arr : LCOR RCOR parte_arr 
@@ -473,7 +475,6 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(label2, newLabel());
                     backpatch(&$3->trues, label, &codigo_intermedio);
                     backpatch(&$3->falses, label2, &codigo_intermedio);
-
                 }
             sentif
             {
@@ -581,7 +582,7 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
                     strcpy(cuad.res, 
-                    &$6->trues);
+                    get_first(&$6->trues));
                     insert_cuad(&codigo_intermedio, cuad);
                 }
              sentencia RPAR sentencia
@@ -611,7 +612,8 @@ sentencia :  IF LPAR condicion RPAR
                 }
 
             | parte_izq ASIG expresion PYC
-                {   
+                {                       
+                    call_params = 0;
                     int compatible = max_type($1.type, $3.type);
                     if(compatible == -1) 
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
@@ -663,7 +665,8 @@ casos : CASE PUNES NUMERO sentencia casos
             strcpy(label, newLabel());
             backpatch(&$2, label, &codigo_intermedio);;    
             */
-            printf("casos -> case : sentencia casos\n");}
+            printf("casos -> case : sentencia casos\n");
+        }
             | %empty {};
 
 predeterm : DEFAULT PUNES sentencia
@@ -739,10 +742,12 @@ expresion:   expresion
                     strcpy($$.dir, $1.val);
                     printf("expresion -> num %s\n", $1.val);
                 }
-            | ID                      
+            | ID  {
+                    stack_push(&func_calls, $1);
+                  }                   
                 LPAR parametros RPAR 
                 {   
-
+                    /* Verifica que exista el id. */
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
@@ -750,18 +755,109 @@ expresion:   expresion
                         yyerror2("[ERROR] No se encontró el identificador", $1);
                         return 1;
                     }
+
+                    if (is_function(&global_funcs, $1))
+                    {
+                        funrec *rec = get_rec(&global_funcs, $1);
+                        if (rec->params != rec->counter)
+                        {
+                            char *msg = (char*) malloc(sizeof(char*));
+                            sprintf(msg, "[ERROR] Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
+                            yyerror(msg);
+                            return -1;                            
+                        }
+                        rec->counter = 0;
+                    }
+                    else if ($4)
+                    {
+                        yyerror2("[ERROR] No corresponde a una función el identificador", $1);
+                        return -1;
+                    }
+
+                    stack_pop(&func_calls, &curr_function);
+                    /* Asigna tipo esperado. */
                     strcpy($$.dir, $1);
                     $$.type = get_type(&curr_env.symbols,$1);
                     printf("expresion -> id %s ( parametros )\n", $1);
                 }
             ;
 
-parametros: lista_param {printf("parametros-> lista_param\n");}
-            | %empty {};
+parametros: lista_param 
+                {
+                    $$ = true; printf("parametros-> lista_param\n");
+                }
+            | %empty {$$ = false;};
 
 lista_param: lista_param COM expresion 
-            {printf("lista_param -> lista_param , expresion\n");}
-            | expresion {printf("lista_param -> expresion\n");};
+                {
+                    cuadrupla cuad;
+                    cuad.op = PARAM;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, $3.dir);
+                    insert_cuad(&codigo_intermedio, cuad);
+
+                    stack_peek(&func_calls, curr_function);
+                    funrec *rec = get_rec(&global_funcs, curr_function);
+                    printf("CHECANDO: %s en indice %d", $3.dir, rec->counter);
+                    if (rec->counter < rec->params)
+                    {
+                        int i = rec->counter;
+                        int tipo = rec->context->symbols[i].type;
+                        if (tipo != $3.type)
+                        {
+                            char *msg = (char*) malloc(sizeof(char*));
+                            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, $3.dir, $3.type, tipo);
+                            yyerror(msg);
+                            return -1;
+                        }
+                        rec->counter++;
+                    }
+                    else
+                    {
+                        //El identificador no cerresponde a un funcion.
+                    }
+
+                    print_funtable(&global_funcs);
+
+                    printf("lista_param -> lista_param , expresion\n");
+                }
+            | expresion 
+                {
+                    cuadrupla cuad;
+                    cuad.op = PARAM;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, $1.dir);
+                    insert_cuad(&codigo_intermedio, cuad);
+
+                    printf("lista_param -> lista_param , expresion\n");
+                    
+                    stack_peek(&func_calls, curr_function);
+                    funrec *rec = get_rec(&global_funcs, curr_function);
+                    printf("CHECANDO: %s en indice %d", $1.dir, rec->counter);
+                    if (rec->counter < rec->params)
+                    {
+                        int i = rec->counter;
+                        int tipo = rec->context->symbols[i].type;
+                        if (tipo != $1.type)
+                        {
+                            char *msg = (char*) malloc(sizeof(char*));
+                            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, $1.dir, $1.type, tipo);
+                            yyerror(msg);
+                            return -1;
+                        }
+                        rec->counter++;
+                    }
+                    else
+                    {
+                        //El identificador no cerresponde a un funcion.
+                    }
+
+                    print_funtable(&global_funcs);
+                    print_funtable(&global_funcs);
+                    printf("lista_param -> expresion\n");
+                };
 
 condicion:  condicion OR 
                 {
@@ -895,7 +991,9 @@ void init()
 {
     create_code(&codigo_intermedio);
     create_labels(&etiquetas);
+    create_funtab(&global_funcs);
 
+    stack_new(&func_calls, sizeof(char) * 32, NULL);
     stack_new(&envs, sizeof(typetab) + sizeof(symtab) , NULL);
     symtab sym_tab;
     create_table(&sym_tab, NULL);
@@ -1030,10 +1128,8 @@ int max_type(int t1, int t2){
         /*Si son ambos números. */
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5) 
-            if (t1 < t2) return t2;
-            else{
-                return t1;
-            } 
+            if (t1 < t2) {return t2;}
+            else { return t1; } 
         /*Si no son números -> tipos incompatibles.
          Por ahora no se pude hacer int a char*/    
         return -1;
@@ -1043,16 +1139,38 @@ int max_type(int t1, int t2){
 /* Asina a e1 el valor de la dirección de e2*/
 exp asignar(exp e1, exp e2){
     exp e;
+
+    if (is_function(&global_funcs, e2.dir) == 1)
+        call_function(&e2);
+
     cuadrupla cuad;
     cuad.op  = AS;
-    strcpy(&cuad.res, e1.dir);
+    strcpy(cuad.res, e1.dir);
     int t1 = e1.type;
     int t2 = e2.type;
     e.type = t1;
-    if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
-    else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
+    if(t1 <= t2) strcpy(cuad.op1, reducir(e2.dir,t2,t1));
+    else strcpy(cuad.op1,ampliar(e2.dir,t2,t1));
     insert_cuad(&codigo_intermedio, cuad);
     return e;
+}
+
+void call_function(exp *e)
+{
+    cuadrupla cuad;
+    char temp[32];
+    char op1[32];
+    funrec rec = *get_rec(&global_funcs, e->dir);        
+
+    sprintf(op1, "call %s, %d", e->dir, rec.params);
+    strcpy(temp, newTemp());
+
+    cuad.op = AS;
+    strcpy(cuad.op1, op1);
+    strcpy(cuad.op2, "");
+    strcpy(cuad.res, temp);
+    insert_cuad(&codigo_intermedio, cuad);
+    strcpy(e->dir, temp);
 }
 
 /* Ampliar el numero de la expresion con dirección dir,
@@ -1181,6 +1299,53 @@ void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
     strcpy(iff.op1, t);
     strcpy(iff.res, dir);
     insert_cuad(&codigo_intermedio, iff);
+}
+
+void insert_sym(char id[32], env curr_env, int tipo)
+{
+    sym symbol;
+    strcpy(symbol.id, id);
+    symbol.type = tipo;
+    symbol.dir  = dir;
+    dir += current_dim;
+    
+    stack_pop(&envs, &curr_env);
+    insert(&curr_env.symbols, symbol);
+    
+    int i = 0;
+    int curr_tam = get_tam(&global_types,current_type);
+    bool primero = true; 
+    while(list_size(&dimensiones)){
+        int temp;
+        list_head(&dimensiones,&temp,1);
+        type tipo = new_type();
+        
+        if(primero)
+        {
+            tipo.base = symbol.type;
+            primero = false;
+        } 
+        else tipo.base = curr_env.types.count -1;
+
+        tipo.dim = temp;
+        curr_tam *= tipo.dim;
+        tipo.tam = curr_tam;
+        
+        int r = insert_type(&curr_env.types,tipo);    
+    }
+    primero = false;    
+    list_destroy(&dimensiones);
+    list_new(&dimensiones, 10,NULL);
+    
+    stack_push(&envs, &curr_env);
+    if (struct_decl){
+        struct_dim += current_dim;
+         printf("->>>struct:%d\n",struct_dim);
+        /*type arr = new_type();
+        arr.base = symbol.type;
+        arr.tam = struct_dim;
+        */
+    }
 }
 
 /*
