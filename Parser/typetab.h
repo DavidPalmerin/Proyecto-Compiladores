@@ -32,7 +32,7 @@ extern "C" {
     type new_type(void);
     type new_type2(int tipo,int tam,int dim,int base);
     type depth_search_type(typetab *st, int pos);
-    int insert_type_(typetab*, type );
+    int insert_type(typetab*, type );
     void print_table_types(typetab*);
     void fprint_table_types(typetab* st, FILE *file);
     void create_table_types(typetab *st,void *parent);

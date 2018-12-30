@@ -13,7 +13,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
     typedef struct _exp{
         char dir[32];
         char arr[32];
@@ -30,11 +29,6 @@ extern "C" {
         int count;
     } labels;
 
-    typedef struct _bools{
-        labels trues;
-        labels falses;
-    } bools;
-    
     typedef struct _env
     {
         symtab symbols;

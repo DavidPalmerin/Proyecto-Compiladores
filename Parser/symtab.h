@@ -29,6 +29,23 @@ extern "C" {
         void *parent;
     } symtab;
 
+    typedef struct _funrec{
+        char id[32];
+        symtab *context;
+        
+        /* Los primeros 'params' elementos en context
+        son los argumentos esperados en la función.*/
+        int params;
+
+        /*Ayuda a verificar tipos de los argumentos.*/
+        int counter;
+    } funrec;
+
+    typedef struct _funtab{
+        funrec funs[1000];
+        int count;
+    } funtab;
+
     int search(symtab *, char*);
     int depth_search(symtab *st, char *id);
     int insert(symtab*, sym );
@@ -37,8 +54,12 @@ extern "C" {
     int get_dir(symtab*, char*);
     void create_table(symtab *st, void *parent);
     int get_type(symtab*, char *);
-
     
+    void create_funtab(funtab *tab);
+    int insert_fun(funtab *tab, funrec rec);
+    void print_funtable(funtab* st);
+    int is_function(funtab *tab, char id[32]);
+    funrec* get_rec(funtab *tab, char id[32]);
 
 
 #ifdef __cplusplus
@@ -46,4 +67,3 @@ extern "C" {
 #endif
 
 #endif /* SYMTAB_H */
-

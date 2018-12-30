@@ -60,6 +60,7 @@ int main(int argc, char **argv) {
   fclose(errores_lexicos);
   fclose(comentarios);
   fclose(contexts);
+  fclose(err);
 
   return 0;
 }
