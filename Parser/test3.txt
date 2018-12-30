@@ -15,9 +15,11 @@ func int _foo()
 }
 func int main(int j)
 {
-
 	int holi;
-	c[0] = 'c';
+	if(2 <4 ){
+		ent = 0;
+	}
+	c[ent() + 1] = 'c';
 	a[1][2][3] = 10;	
 	f = 4;
 	d = f();

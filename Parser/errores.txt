@@ -1,4 +1,4 @@
 [ERROR] Para acceder a un arreglo la expresión o número debe ser un entero : en la línea 14
 Error: No se puede asignar, tipos incompatibles.: en la línea 14
-[ERROR] No se ha declarado la variable palmi: en la línea 25
-Error: No se puede asignar, tipos incompatibles.: en la línea 25
+[ERROR] No se ha declarado la variable palmi: en la línea 27
+Error: No se puede asignar, tipos incompatibles.: en la línea 27

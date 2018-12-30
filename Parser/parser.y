@@ -87,6 +87,7 @@ exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
 exp identificador(char *);
 exp asignar(exp e1,exp e2);
+bools * relational_op(exp e1,exp e2, int rel);
 
 void gen_cond_goto(char dir[32]);
 void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
@@ -106,14 +107,14 @@ char *newLabel();
 char *newIndex();
 
 %}
-
+/*
 %code requires{
     typedef struct _bools{
         labels trues;
         labels falses;
     } bools;
 }
-
+*/
 %union{   
     int    rel;
     char   id[32];
@@ -749,7 +750,20 @@ var_arreglo : ID LCOR expresion RCOR
                     exp arr_index = $3;
                     printf("->> Index: %s\n",arr_index.dir);
                     printf("->> Tipo base: %d\n",base_type);
-                        
+                    
+                    /*index > -1
+                    exp menosuno;
+                    menosuno.type = 2;
+                    sprintf(menosuno.dir,"%d",-1);
+                    bools * condicion = relational_op(arr_index,menosuno,GT);
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first(&condicion->trues));
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);
+                    */
                     $$.type = base_type;
                     /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
                     dir = base_dir + (index * tam_base) + ...*/
@@ -764,6 +778,8 @@ var_arreglo : ID LCOR expresion RCOR
                     printf("->> Dir act: %s\n",$$.dir);
 
                     printf("var_arreglo -> id [ expresion ] \n");
+                    
+
                 }
             }
             | var_arreglo LCOR expresion RCOR 
@@ -786,8 +802,6 @@ var_arreglo : ID LCOR expresion RCOR
                         base_dir.type = 2;
 
                         printf("CURR TYPE --->%d\n",$1.type);
-
-                        //if(index > -1 && index < get_dim)
 
                         int base_type = get_base(&curr_env.types,$1.type);
 
@@ -941,37 +955,7 @@ condicion:  condicion OR
                 }
             | expresion relacional expresion
                 {
-                    char i[32];
-                    char i2[32];
-                    char temp[32];
-                    strcpy(i, newIndex());
-                    strcpy(i2, newIndex());
-                    strcpy(temp, newTemp());
-
-                    $$ = (bools*) malloc(sizeof(bools));
-                    $$->trues = create_list(i);
-                    $$->falses = create_list(i2);
-
-                    cuadrupla c, c1, c2;
-                    
-                    c.op = $2;
-                    strcpy(c.op1, $1.dir);
-                    strcpy(c.op2, $3.dir);
-                    strcpy(c.res, temp);
-
-                    c1.op = IFF;
-                    strcpy(c1.op1, temp);
-                    strcpy(c1.op2, "GOTO");
-                    strcpy(c1.res, i);
-
-                    c2.op = GOTO;
-                    strcpy(c2.op1, "");
-                    strcpy(c2.op2, "");
-                    strcpy(c2.res, i2);
-
-                    insert_cuad(&codigo_intermedio, c);
-                    insert_cuad(&codigo_intermedio, c1);
-                    insert_cuad(&codigo_intermedio, c2);
+                    $$ = relational_op($1,$3,$2);
 
                     printf("condicion -> expresion rel expresion \n");
                 }
@@ -1318,6 +1302,42 @@ void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
     strcpy(iff.op1, t);
     strcpy(iff.res, dir);
     insert_cuad(&codigo_intermedio, iff);
+}
+bools * relational_op(exp e1,exp e2,int rel){
+    char i[32];
+    char i2[32];
+    char temp[32];
+    strcpy(i, newIndex());
+    strcpy(i2, newIndex());
+    strcpy(temp, newTemp());
+    bools * b;
+    b = (bools*) malloc(sizeof(bools));
+    b->trues = create_list(i);
+    b->falses = create_list(i2);
+
+    cuadrupla c, c1, c2;
+    
+    c.op = rel;
+    strcpy(c.op1, e1.dir);
+    strcpy(c.op2, e2.dir);
+    strcpy(c.res, temp);
+
+    c1.op = IFF;
+    strcpy(c1.op1, temp);
+    strcpy(c1.op2, "GOTO");
+    strcpy(c1.res, i);
+
+    c2.op = GOTO;
+    strcpy(c2.op1, "");
+    strcpy(c2.op2, "");
+    strcpy(c2.res, i2);
+
+    insert_cuad(&codigo_intermedio, c);
+    insert_cuad(&codigo_intermedio, c1);
+    insert_cuad(&codigo_intermedio, c2);
+
+    return b;
+
 }
 
 /*
