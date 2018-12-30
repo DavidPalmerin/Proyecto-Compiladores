@@ -68,6 +68,10 @@ int    call_params = 0;
 char   curr_function[32];
 stack  func_calls;
 
+/* Pila para cases de switch*/
+stack switchesback;
+int   switch_call = 0;
+
 /* Variable papra guardar el código intermedio que se va generando */
 ic codigo_intermedio;
 
@@ -134,6 +138,7 @@ char *newIndex();
     char*  cadena;   
     exp    expr;
     int    tipo;
+    int    cases;
     bool   args;
     numero num;
     labels siguientes;
@@ -172,11 +177,12 @@ char *newIndex();
 
 %type<tipo> tipo
 %type<booleans> condicion
+%type<cases> casos
 %type<siguientes> sentencia sentencias
 %type<siguientesp> sentif
 %type<expr> expresion parte_izq var_arreglo
 %type<rel> relacional
-%type<args> parametros;
+%type<args> parametros
 
 %start programa
 
@@ -196,14 +202,6 @@ programa:       { init(); }
                             print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
                             
-                            int i;
-                            for (i = 0; i < 3; i ++)
-                            {
-                                printf("Función: %s\n", global_funcs.funs[i].id);
-                                print_table(global_funcs.funs[i].context);
-                            }
-
-
                             finish();
                         };
 
@@ -712,13 +710,55 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | SWITCH LPAR expresion RPAR
                 {
-                   
+                    push_label(&lfalses, newLabel());
+                    push_label(&lfalses, newLabel());
+                    switch_call++;
+
+                    cuadrupla cuad;
+                    cuad.op = GOTO;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_top_label_previous(&lfalses));
+                    insert_cuad(&codigo_intermedio, cuad);
                 }
-             LKEY casos predeterm RKEY
+              LKEY casos predeterm RKEY
                 {
 
-                    printf("sentencia -> switch ( expresion ) { casos prederterm} \n");
+                    cuadrupla c;
+                    c.op = LB;
+                    strcpy(c.op1, "");
+                    strcpy(c.op2, "");
+                    strcpy(c.res, get_top_label_previous(&lfalses));
+                    insert_cuad(&codigo_intermedio, c);
+
+                    while(stack_size(&switchesback) > 0)
+                    {
+                        switches sw;
+                        stack_peek(&switchesback, &sw);
+                        if (sw.link != $7) break;
+                        stack_pop(&switchesback, &sw);
+                        
+                        char arg[32];
+                        sprintf(arg, "%s = %s", $3.dir, sw.caso);
+
+                        cuadrupla cuad;
+                        cuad.op = IFF;
+                        strcpy(cuad.op1, arg);
+                        strcpy(cuad.op2, "");
+                        strcpy(cuad.res, sw.label);
+                        insert_cuad(&codigo_intermedio, cuad);
+                    }
+
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, pop_label(&lfalses));
+                    insert_cuad(&codigo_intermedio, cuad);
+
+                    pop_label(&lfalses);
                 }
+    
             | BREAK PYC 
                 {
                     printf("sentencia -> break ;\n");
@@ -729,17 +769,36 @@ sentencia :  IF LPAR condicion RPAR
                 }
             ; 
 
-casos : CASE PUNES NUMERO sentencia casos
-        {
-            /*
-            char label[32];
-            $$ = $4;
-            strcpy(label, newLabel());
-            backpatch(&$2, label, &codigo_intermedio);;    
-            */
-            printf("casos -> case : sentencia casos\n");
-        }
-            | %empty {};
+casos : CASE PUNES NUMERO 
+            {
+                cuadrupla cuad;
+                char index[32];
+                strcpy(index, newLabel());
+
+                cuad.op = LB;
+                strcpy(cuad.op1, "");
+                strcpy(cuad.op2, "");
+                strcpy(cuad.res, index);
+                insert_cuad(&codigo_intermedio, cuad);
+
+                switches sw;
+                strcpy(sw.label, index);
+                strcpy(sw.caso, $3.val);
+                sw.link = switch_call;
+                stack_push(&switchesback, &sw);
+            }
+        sentencias
+            {
+                char *label = get_top_label(&lfalses);
+                cuadrupla cuad;
+                cuad.op = GOTO;
+                strcpy(cuad.op1, "");
+                strcpy(cuad.op2, "");
+                strcpy(cuad.res, label);
+                insert_cuad(&codigo_intermedio, cuad);
+            }
+        casos { $$ = $7; }
+        | %empty {$$ = switch_call;};
 
 predeterm : DEFAULT PUNES sentencia
             {printf("predeterm -> default : sentencia\n");}
@@ -1159,6 +1218,7 @@ void init()
     create_labels(&etiquetas);
     create_funtab(&global_funcs);
 
+    stack_new(&switchesback, sizeof(switches), NULL);
     stack_new(&func_calls, sizeof(char) * 32, NULL);
     stack_new(&envs, sizeof(typetab) + sizeof(symtab) , NULL);
     symtab sym_tab;

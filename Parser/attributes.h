@@ -35,6 +35,13 @@ extern "C" {
         typetab types;
     } env;
 
+    typedef struct _switches
+    {
+        char label[32];
+        char caso[32];
+        int  link;
+    } switches;
+
     char *pop_label(labels*);
     void push_label(labels*, char *l);
     
