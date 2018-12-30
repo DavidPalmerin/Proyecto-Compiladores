@@ -21,7 +21,7 @@ double pls;
 int rew;
 char array_C[15][3];
 
-func char lol()
+func int lol(int k)
 {
 	int adasdnisadf;
 	a = 3;
@@ -50,7 +50,7 @@ func int main(int k, int l)
  	b = -.231239124;
 	tre = 'A';
 	b = a() + rew() + x() + y() + z();
-    totr = get_char('A', foo(lol(), a(), kes()));
+    totr = get_char('A', foo('A', lol(lol(lol(3))), kes()));
 	if (2 < 3){
 		tre = 'R';
 		kes = ewerw();

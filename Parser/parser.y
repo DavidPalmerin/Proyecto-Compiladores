@@ -192,6 +192,14 @@ programa:       { init(); }
                             print_context("Contexto global", "");
                             printf("programa -> decl funciones\n");
                             
+                            int i;
+                            for (i = 0; i < 3; i ++)
+                            {
+                                printf("Función: %s\n", global_funcs.funs[i].id);
+                                print_table(global_funcs.funs[i].context);
+                            }
+
+
                             finish();
                         };
 
@@ -258,8 +266,7 @@ lista :     lista
                     
                     printf("lista -> lista , id arreglo\n");}
             
-            | ID {
-                   }
+            | ID 
               arreglo
                 {
                     env curr_env;
@@ -354,9 +361,12 @@ funciones : FUNC
                     env fun_env;
                     stack_peek(&envs, &fun_env);
 
+                    symtab *func_context = (symtab*) malloc(sizeof(symtab));
+                    *func_context = fun_env.symbols;
+
                     funrec reg;
                     strcpy(reg.id, $3);
-                    reg.context = &fun_env.symbols;
+                    reg.context = func_context;
                     reg.params = num_params;
                     reg.counter = 0;
                     insert_fun(&global_funcs, reg);
@@ -367,8 +377,7 @@ funciones : FUNC
                     env curr_env;
                     stack_pop(&envs, &curr_env);
 
-                    /* Agregamos el nombre de la función al contexto
-                        donde se puede llamar. */
+                    /* Agregamos el nombre de la función al contexto donde se puede llamar. */
                     sym symbol;
                     strcpy(symbol.id, $3);
                     symbol.type = $2;
@@ -829,7 +838,7 @@ lista_param: lista_param COM expresion
                     stack_peek(&func_calls, curr_function);
                     funrec *rec = get_rec(&global_funcs, curr_function);
 
-                    if (check_args_types(rec, $1))
+                    if (check_args_types(rec, $1) < 0)
                         return -1;
                     
                     printf("lista_param -> expresion\n");
@@ -1332,6 +1341,8 @@ int check_args_types(funrec *rec, exp expr)
     {
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
+        printf("FUNC %s", expr.dir);
+        print_table(rec->context->symbols);
         if (tipo != expr.type)
         {
             char *msg = (char*) malloc(sizeof(char*));
