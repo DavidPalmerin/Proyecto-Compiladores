@@ -27,6 +27,7 @@ extern FILE *tokens_output;
 extern FILE *errores_lexicos;
 extern FILE *comentarios;
 extern FILE *contexts;
+extern FILE *err;
 
 
 int main(int argc, char **argv) {
@@ -38,6 +39,7 @@ int main(int argc, char **argv) {
   if (!f)	
     return -1;
 
+  err = fopen("errores.txt", "w");
   contexts = fopen("contexts.txt", "w");
   comentarios = fopen("comentarios.txt", "w");
   tokens_output = fopen("tokens_output.txt", "w");
@@ -58,6 +60,7 @@ int main(int argc, char **argv) {
   fclose(errores_lexicos);
   fclose(comentarios);
   fclose(contexts);
+  fclose(err);
 
   return 0;
 }

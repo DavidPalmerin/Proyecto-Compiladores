@@ -16,7 +16,6 @@ type new_type(){
     t.base = -1;
     return t;
 }
-
 type new_type2(int tipo,int tam,int dim,int base){
     type t;
     t.type = tipo;
@@ -32,20 +31,16 @@ type depth_search_type(typetab *tt, int pos)
         exists = parent->types[pos];
     printf("pos = %d,tipoooo-> %d\n",pos,exists.type );
     return exists;
-    
     //return tt->types[pos];
 }
-
-
 int insert_type(typetab *tt, type t){
     if(t.base > tt->count)
         return -1;
     tt->types[tt->count] = t;
     tt->count++;  
-    printf("Se guardó tipo.\n");      
+    //printf("Se guardó tipo.\n");      
     return 1;
 }
-
 void print_table_types(typetab* tt){    
     int i;
     printf("POS\ttype\tTAM\tDIM\tT_BASE\n");    
@@ -57,7 +52,6 @@ void print_table_types(typetab* tt){
             tt->types[i].base);          
     }
 }
-
 void fprint_table_types(typetab* tt, FILE *file){    
     int i;
     fprintf(file,"POS\ttype\tTAM\tDIM\tT_BASE\n");    
@@ -69,7 +63,6 @@ void fprint_table_types(typetab* tt, FILE *file){
             tt->types[i].base);          
     }
 }
-
 void print_type(type t){
    // if (tt->count < i)
     printf("TIPO: %d\t%d\t%d\t%d\n", 
@@ -79,15 +72,12 @@ void print_type(type t){
         t.base);
    // else printf("Error: No existe tipo.\n");          
 }
-
 int get_type_(typetab* tt, int pos){
     type t = depth_search_type(tt, pos);
     return t.type;
 }
 
 int get_tam(typetab* tt, int pos){
-    //type t = depth_search_type(tt, pos);
-    //return t.tam;
     int tam = tt->types[pos].tam;
     if(tam == 0){
         typetab *parent = tt->parent;
@@ -97,13 +87,21 @@ int get_tam(typetab* tt, int pos){
 }
 
 int get_dim(typetab* tt, int pos){
-    type t = depth_search_type(tt, pos);
-    return t.dim;
+    int dim = tt->types[pos].dim;
+    if(dim == 0){
+        typetab *parent = tt->parent;
+        dim = parent->types[pos].dim;
+    }
+    return dim;
 }
 
 int get_base(typetab* tt, int pos){
-    type t = depth_search_type(tt, pos);
-    return t.base;
+    int base = tt->types[pos].base;
+    if(base == 0){
+        typetab *parent = tt->parent;
+        base = parent->types[pos].base;
+    }
+    return base;
 }
 void create_table_types(typetab *tt, void *parent){
     // Tipos base

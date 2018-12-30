@@ -23,6 +23,7 @@ extern int yylineno;
 
 /* Ouput files */
 FILE *contexts;
+FILE *err;
 
 /* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
@@ -91,6 +92,9 @@ stack envs;
 
 /* Lista para las dimensiones de un arreglo.*/
 list dimensiones;
+
+/* Auxiliar para variables que no se puedan declarar. */
+bool fail_decl = false;
 
 exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
@@ -170,7 +174,7 @@ char *newIndex();
 %type<booleans> condicion
 %type<siguientes> sentencia sentencias
 %type<siguientesp> sentif
-%type<expr> expresion parte_izq
+%type<expr> expresion parte_izq var_arreglo
 %type<rel> relacional
 %type<args> parametros;
 
@@ -252,20 +256,65 @@ lista :     lista
                     if (depth_search(&curr_env.symbols, $3) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
-                        return 1;
+                        fail_decl = true;
                     }                
-
-
                     if (current_type == 5)
                     {
                         yyerror("[ERROR] Struct solo puede tener un identificador.");
-                        return 1;
-                    }                    
+                        fail_decl = true;
+                    }
+                    if(current_type == 0)
+                    {
+                        yyerror("No se pueden declarar variables de tipo void.");
+                        fail_decl = true;
+                    }                        
+                    if(fail_decl){
+                        fail_decl = false;
+                    }
+                    else{
 
-                    insert_sym($3, curr_env, current_type);
-                    
-                    printf("lista -> lista , id arreglo\n");}
-            
+                        sym symbol;
+                        strcpy(symbol.id, $3);
+                        symbol.type = current_type;
+                        symbol.dir  = dir;
+                        dir += current_dim;
+                        
+                        stack_pop(&envs, &curr_env);
+
+                        int curr_tam = get_tam(&global_types,current_type);
+                        bool primero = true; 
+                        while(list_size(&dimensiones)){
+                            int temp;
+                            list_head(&dimensiones,&temp,1);
+                            type tipo = new_type();
+                            
+                            if(primero)
+                            {
+                                tipo.base = symbol.type;
+                                primero = false;
+                            } 
+                            else tipo.base = curr_env.types.count -1;
+
+                            tipo.dim = temp;
+                            curr_tam *= tipo.dim;
+                            tipo.tam = curr_tam;
+                            
+                            insert_type(&curr_env.types,tipo);
+                            //Cambiamos el tipo del id si es arreglo, apuntando a su última dim
+                            symbol.type = curr_env.types.count -1;
+                        }
+                        primero = false;    
+                        list_destroy(&dimensiones);
+                        list_new(&dimensiones, 10,NULL);
+                        
+                        insert(&curr_env.symbols, symbol);
+                        stack_push(&envs, &curr_env);
+                        if (struct_decl){
+                            struct_dim += current_dim;
+                        }
+                        
+                        printf("lista -> lista , id arreglo\n");}
+                }
             | ID 
               arreglo
                 {
@@ -274,58 +323,70 @@ lista :     lista
                     if (depth_search(&curr_env.symbols, $1) != -1)
                     {
                         yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
-                        return 1;
+                        fail_decl = true;
+                    }
+                    if(current_type == 0){
+                        yyerror("[ERROR] No se pueden declarar variables de tipo void.");
+                        fail_decl = true;
                     }                  
-
-                    sym symbol;
-                    strcpy(symbol.id, $1);
-                    symbol.type = current_type;
-                    symbol.dir  = dir;
-                    dir += current_dim;
-
-           
-                    stack_pop(&envs, &curr_env);
-                    insert(&curr_env.symbols, symbol);
-                    int curr_tam = get_tam(&global_types,current_type);
-                    bool primero = true; 
-                    while(list_size(&dimensiones)){
-                        int temp;
-                        list_head(&dimensiones,&temp,1);
-                        type tipo = new_type();
-                        
-                        if(primero)
-                        {
-                            tipo.base = symbol.type;
-                            primero = false;
-                        } 
-                        else tipo.base = curr_env.types.count -1;
-
-                        tipo.dim = temp;
-                        curr_tam *= tipo.dim;
-                        tipo.tam = curr_tam;
-                        
-                        int r = insert_type(&curr_env.types,tipo);
-                        //print_type(tipo);
-                        //fprint_table_types(&curr_env.types,contexts);
-                    
+                    if(fail_decl){
+                        fail_decl = false;
                     }
-                    primero = false;    
-                    list_destroy(&dimensiones);
-                    list_new(&dimensiones, 10,NULL);
-                    
-                    stack_push(&envs, &curr_env);
-                    if (current_type != 5 && struct_decl){
-                        struct_dim += current_dim;
+                    else {
+                        sym symbol;
+                        strcpy(symbol.id, $1);
+                        symbol.type = current_type;
+                        symbol.dir  = dir;
+                        dir += current_dim;
+
+                        stack_pop(&envs, &curr_env);
+                        int curr_tam = get_tam(&global_types,current_type);
+                        bool primero = true; 
+                        while(list_size(&dimensiones)){
+                            int temp;
+                            list_head(&dimensiones,&temp,1);
+                            type tipo = new_type();
+                            
+                            if(primero)
+                            {
+                                tipo.base = symbol.type;
+                                primero = false;
+                            } 
+                            else tipo.base = curr_env.types.count -1;
+
+                            tipo.dim = temp;
+                            curr_tam *= tipo.dim;
+                            tipo.tam = curr_tam;
+                            
+                            insert_type(&curr_env.types,tipo);
+                            //Cambiamos el tipo del id si es arreglo, apuntando a su última dim
+                            symbol.type = curr_env.types.count - 1;
+                        }
+                        primero = false;
+                        list_destroy(&dimensiones);
+                        list_new(&dimensiones, 10,NULL);
+
+                        insert(&curr_env.symbols, symbol);
+                        stack_push(&envs, &curr_env);
+                        if (current_type != 5 && struct_decl){
+                            struct_dim += current_dim;
+                        }
+                        printf("lista- >id arreglo\n");
                     }
-                    printf("lista- >id arreglo\n");
                 };
 
 arreglo : LCOR NUMERO RCOR arreglo 
             {   
-                int num = atoi($2.val);
-                current_dim *= num;
-                list_append(&dimensiones, &num);
-                printf("arreglo -> id arreglo\n");
+                if ($2.type == 2){
+                    int num = atoi($2.val);
+                    current_dim *= num;
+                    list_append(&dimensiones, &num);
+                    printf("arreglo -> id arreglo\n");
+                }
+                else{ 
+                    fail_decl = true;
+                    yyerror("[ERROR ] La dimensión del arreglo se debe indicar con un entero.");
+                };
                 
             }
             | %empty 
@@ -698,18 +759,133 @@ parte_izq : ID  {
                 }
             | var_arreglo 
                 {
-                    printf("parte_izq -> var_arreglo\n");
+                    if(fail_decl){
+                        fail_decl = false;
+                    }
+                    else
+                    {
+                        exp id;
+                        strcpy(id.dir,$1.arr);
+                        id.type = $1.type;
+                        $$ = asignar(id,$1);
+                        printf("parte_izq -> var_arreglo\n");
+                    }
                 }
             | ID DOT ID 
                 {
                     printf("parte_izq -> id.id\n");
                 }
 
-var_arreglo : ID LCOR expresion RCOR {printf("var_arreglo -> id [ expresion ] \n");}
-            | var_arreglo LCOR expresion RCOR {printf("var_arreglo -> var arreglo [ expresion ]\n");};
+var_arreglo : ID LCOR expresion RCOR 
+            {
+                env curr_env;
+                stack_peek(&envs, &curr_env);
+                if (depth_search(&curr_env.symbols, $1) == -1)
+                    {
+                        yyerror2("[ERROR] No se encontró el identificador", $1);
+                        fail_decl = true;
+                    }
+                strcpy($$.arr,$1);
+                exp base_dir;
+                sprintf(base_dir.dir,"%d",get_dir(&curr_env.symbols,$1));
+                base_dir.type = 2;
+                int curr_type = get_type(&curr_env.symbols,$1);
 
-expresion:   expresion  
-             MAS expresion 
+                if( $3.type != 2)
+                    {
+                    yyerror("[ERROR] Para acceder a un arreglo la expresión o número debe ser un entero ");
+                    fail_decl = true;
+                    }
+                if( curr_type == 5)
+                    {
+                    yyerror("[ERROR] Acceso inválido, es tipo struct y se está intentando acceder como un arreglo ");
+                    fail_decl = true;
+                    }
+                if(!fail_decl)
+                {
+                    printf("CURR TYPE --->%d\n",curr_type);
+
+                    int base_type = get_base(&curr_env.types,curr_type);
+
+                    exp arr_index = $3;
+                    printf("->> Index: %s\n",arr_index.dir);
+                    printf("->> Tipo base: %d\n",base_type);
+                    
+                    /*index > -1
+                    exp menosuno;
+                    menosuno.type = 2;
+                    sprintf(menosuno.dir,"%d",-1);
+                    bools * condicion = relational_op(arr_index,menosuno,GT);
+                    cuadrupla cuad;
+                    cuad.op = LB;
+                    strcpy(cuad.op1, "");
+                    strcpy(cuad.op2, "");
+                    strcpy(cuad.res, get_first(&condicion->trues));
+                    if (strcmp(cuad.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad);
+                    */
+                    $$.type = base_type;
+                    /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
+                    dir = base_dir + (index * tam_base) + ...*/
+                    
+                    exp tam_act;
+                    tam_act.type = 2;
+                    sprintf(tam_act.dir, "%d",get_tam(&curr_env.types,base_type));
+                    
+                    exp curr_dir = math_function(arr_index,tam_act,ML);
+
+                    strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
+                    printf("->> Dir act: %s\n",$$.dir);
+
+                    printf("var_arreglo -> id [ expresion ] \n");
+                    
+
+                }
+            }
+            | var_arreglo LCOR expresion RCOR 
+                { 
+                if( $3.type != 2)
+                    {
+                    yyerror("[ERROR] Para acceder a un arreglo la expresión o número debe ser un entero ");
+                    fail_decl = true;
+                    }
+                env curr_env;
+                stack_peek(&envs, &curr_env);
+                if($1.type == -1){
+                    yyerror("[ERROR] Fuera de rango ");
+                    fail_decl = true;
+                }
+                if(!fail_decl)
+                    {
+                        exp base_dir;
+                        strcpy(base_dir.dir,$1.dir);
+                        base_dir.type = 2;
+
+                        printf("CURR TYPE --->%d\n",$1.type);
+
+                        int base_type = get_base(&curr_env.types,$1.type);
+
+                        exp arr_index = $3;
+                        printf("->> Index: %s\n",arr_index.dir);
+                        printf("->> Tipo base: %d\n",base_type);
+                            
+                        $$.type = base_type;
+                        /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
+                        dir = base_dir + (index * tam_base) + ...*/
+                        
+                        exp tam_act;
+                        tam_act.type = 2;
+                        sprintf(tam_act.dir,"%d", get_tam(&curr_env.types,base_type));
+                        
+                        exp curr_dir = math_function(arr_index,tam_act,ML);
+
+                        strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
+                      
+                        printf("var_arreglo -> var arreglo [ expresion ]\n");
+                    }
+                };
+
+expresion:   expresion MAS expresion 
                 {
                     $$ = math_function($1,$3,MA);
                     printf("expresion -> expresion + expresion \n");
@@ -736,6 +912,9 @@ expresion:   expresion
                 }
             | var_arreglo
                 {
+                    exp id;
+                    strcpy(id.dir,$1.arr);
+                    $$ = asignar(id,$1);
                     printf("expresion -> var_arreglo\n");
                 }
             | CAR 
@@ -966,10 +1145,12 @@ relacional: MAYOR { $$ = GT; printf("rel-> >\n"); }
 
 void yyerror(char *s){
     printf("%s: en la línea %d\n",s, yylineno);
+    fprintf(err,"%s: en la línea %d\n",s, yylineno);
 }
 
 void yyerror2(char *s, char *n){
     printf("%s %s: en la línea %d\n",s, n, yylineno);
+    fprintf(err,"%s %s: en la línea %d\n",s, n, yylineno);
 }
 
 void init()
@@ -987,9 +1168,6 @@ void init()
     typetab type_tab;
     create_table_types(&type_tab, NULL);
    
-    stack exprs;
-    stack_new(&exprs, 32 * sizeof(char), NULL);
-
     env initial_env;
     initial_env.symbols = sym_tab;
     initial_env.types = type_tab;
@@ -1038,7 +1216,6 @@ void add_context(bool func_context)
     my_env.symbols = new_symtab;
     my_env.types = new_typetab;
 
-    //fprint_table_types(&my_env.types,contexts);
     stack_push(&envs, &my_env);
     dir = 0;
 }
@@ -1127,17 +1304,41 @@ exp asignar(exp e1, exp e2){
 
     if (is_function(&global_funcs, e2.dir) == 1)
         call_function(&e2);
-
     cuadrupla cuad;
-    cuad.op  = AS;
-    strcpy(cuad.res, e1.dir);
-    int t1 = e1.type;
-    int t2 = e2.type;
-    e.type = t1;
-    if(t1 <= t2) strcpy(cuad.op1, reducir(e2.dir,t2,t1));
-    else strcpy(cuad.op1,ampliar(e2.dir,t2,t1));
-    insert_cuad(&codigo_intermedio, cuad);
-    return e;
+    /* Si se está pidiendo asignar un arreglo, i.e, e2.arr == ID*/
+    if(strlen(e2.arr) > 0) {
+        /* Verifica que exista el id. */
+        env curr_env;
+        stack_peek(&envs, &curr_env);
+        if (depth_search(&curr_env.symbols, e2.arr) == -1)
+        {
+            yyerror2("[ERROR] No se encontró el identificador", e2.arr);
+        }
+        else{
+            cuad.op = AS_ARR;
+            char *temp = (char*) malloc(32*sizeof(char));
+            strcpy(temp, newTemp());
+            strcpy(&cuad.res, temp);  // T =
+            strcpy(&cuad.op1,e1.dir); //     ID
+            strcpy(&cuad.op2,e2.dir); //         [VAL]
+            insert_cuad(&codigo_intermedio, cuad);
+            strcpy(e.dir,temp);
+            e.type = e2.type;
+            return e;
+        }
+    }
+    else {
+        cuad.op  = AS;
+        strcpy(&cuad.res, e1.dir);
+        strcpy(e.dir, e1.dir);
+        int t1 = e1.type;
+        int t2 = e2.type;
+        e.type = t1;
+        if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
+        else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
+        insert_cuad(&codigo_intermedio, cuad);
+        return e;
+    }
 }
 
 exp* call_function(exp *e)

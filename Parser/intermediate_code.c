@@ -98,6 +98,10 @@ void print_code(ic* code){
                 fprintf(CODIGO, "\t param %s\n", temporal.res);
                 //printf("%s:", temporal.res);
                 break;
+            case AS_ARR:
+                fprintf(CODIGO, "\t %s = %s [ %s ] \n",  temporal.res, temporal.op1,temporal.op2);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
+                break;
         }      
     }
     fclose(CODIGO);
