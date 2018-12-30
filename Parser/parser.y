@@ -80,8 +80,10 @@ void add_context(bool func_context);
 void del_context(bool context);
 bool exists_main();
 void print_context(char *s1, char *s2);
-void call_function(exp *e);
+exp* call_function(exp *e);
 void insert_sym(char id[32], env curr_env, int tipo);
+int check_args_types(funrec *rec, exp expr);
+
 
 
 /* Pila de tablas de símbolos para cada contexto. */
@@ -794,31 +796,19 @@ lista_param: lista_param COM expresion
                     cuad.op = PARAM;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, $3.dir);
+                    if (is_function(&global_funcs, $3.dir) == 0)
+                        strcpy(cuad.res, $3.dir);
+                    else{
+                        exp *e = call_function(&$3);
+                        strcpy(cuad.res, e->dir);
+                    }
                     insert_cuad(&codigo_intermedio, cuad);
 
                     stack_peek(&func_calls, curr_function);
                     funrec *rec = get_rec(&global_funcs, curr_function);
-                    printf("CHECANDO: %s en indice %d", $3.dir, rec->counter);
-                    if (rec->counter < rec->params)
-                    {
-                        int i = rec->counter;
-                        int tipo = rec->context->symbols[i].type;
-                        if (tipo != $3.type)
-                        {
-                            char *msg = (char*) malloc(sizeof(char*));
-                            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, $3.dir, $3.type, tipo);
-                            yyerror(msg);
-                            return -1;
-                        }
-                        rec->counter++;
-                    }
-                    else
-                    {
-                        //El identificador no cerresponde a un funcion.
-                    }
 
-                    print_funtable(&global_funcs);
+                    if (check_args_types(rec, $3) < 0)
+                        return -1;
 
                     printf("lista_param -> lista_param , expresion\n");
                 }
@@ -828,34 +818,20 @@ lista_param: lista_param COM expresion
                     cuad.op = PARAM;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, $1.dir);
+                    if (is_function(&global_funcs, $1.dir) == 0)
+                        strcpy(cuad.res, $1.dir);
+                    else{
+                        exp *e = call_function(&$1);
+                        strcpy(cuad.res, e->dir);
+                    }
                     insert_cuad(&codigo_intermedio, cuad);
-
-                    printf("lista_param -> lista_param , expresion\n");
                     
                     stack_peek(&func_calls, curr_function);
                     funrec *rec = get_rec(&global_funcs, curr_function);
-                    printf("CHECANDO: %s en indice %d", $1.dir, rec->counter);
-                    if (rec->counter < rec->params)
-                    {
-                        int i = rec->counter;
-                        int tipo = rec->context->symbols[i].type;
-                        if (tipo != $1.type)
-                        {
-                            char *msg = (char*) malloc(sizeof(char*));
-                            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, $1.dir, $1.type, tipo);
-                            yyerror(msg);
-                            return -1;
-                        }
-                        rec->counter++;
-                    }
-                    else
-                    {
-                        //El identificador no cerresponde a un funcion.
-                    }
 
-                    print_funtable(&global_funcs);
-                    print_funtable(&global_funcs);
+                    if (check_args_types(rec, $1))
+                        return -1;
+                    
                     printf("lista_param -> expresion\n");
                 };
 
@@ -1155,7 +1131,7 @@ exp asignar(exp e1, exp e2){
     return e;
 }
 
-void call_function(exp *e)
+exp* call_function(exp *e)
 {
     cuadrupla cuad;
     char temp[32];
@@ -1171,6 +1147,8 @@ void call_function(exp *e)
     strcpy(cuad.res, temp);
     insert_cuad(&codigo_intermedio, cuad);
     strcpy(e->dir, temp);
+    
+    return e;
 }
 
 /* Ampliar el numero de la expresion con dirección dir,
@@ -1347,6 +1325,29 @@ void insert_sym(char id[32], env curr_env, int tipo)
         */
     }
 }
+
+int check_args_types(funrec *rec, exp expr)
+{
+    if (rec->counter < rec->params)
+    {
+        int i = rec->counter;
+        int tipo = rec->context->symbols[i].type;
+        if (tipo != expr.type)
+        {
+            char *msg = (char*) malloc(sizeof(char*));
+            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, expr.dir, expr.type, tipo);
+            yyerror(msg);
+            return -1;
+        }
+        rec->counter++;
+    }
+    else
+    {
+        //El identificador no cerresponde a un funcion.
+    }
+    return 0;
+}
+
 
 /*
 mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}

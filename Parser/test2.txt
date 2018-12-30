@@ -21,6 +21,12 @@ double pls;
 int rew;
 char array_C[15][3];
 
+func char lol()
+{
+	int adasdnisadf;
+	a = 3;
+}
+
 func int foo(char aba, int pard, int yirw)
 {
 	int l;
@@ -44,7 +50,7 @@ func int main(int k, int l)
  	b = -.231239124;
 	tre = 'A';
 	b = a() + rew() + x() + y() + z();
-    	totr = get_char('A',4);
+    totr = get_char('A', foo(lol(), a(), kes()));
 	if (2 < 3){
 		tre = 'R';
 		kes = ewerw();
@@ -56,7 +62,7 @@ func int main(int k, int l)
 		a = a() + 1;
 		y = 3 + x();
 	}
-	a = foo('A', 2+3, a());
+	a = foo(get_char('A', 2), 2+3, a());
 	do a = 12; while (a() < 23);
 	kes = 2323.32;
 	for (a = 0;; a() < 10; a = a() + 1;){
