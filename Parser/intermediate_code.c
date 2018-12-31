@@ -102,6 +102,10 @@ void print_code(ic* code){
                 fprintf(CODIGO, "\t %s = %s [ %s ] \n",  temporal.res, temporal.op1,temporal.op2);
                 //printf("%s = %s %s\n", temporal.res, temporal.op1);
                 break;
+            case ASS:
+                fprintf(CODIGO, "\t %s = %s\n",  temporal.res, temporal.string_op);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
+                break;
         }      
     }
     fclose(CODIGO);

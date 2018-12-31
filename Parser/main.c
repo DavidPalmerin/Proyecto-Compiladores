@@ -61,6 +61,14 @@ int main(int argc, char **argv) {
   fclose(comentarios);
   fclose(contexts);
   fclose(err);
-
+  FILE * errores = fopen("errores.txt","r");
+  if(errores){
+    printf("\n -----------\t  [Errores]  \t-----------\n\n");
+    char read;
+    while((read = getc(errores)) != EOF)
+        putchar(read);
+    printf("\n -----------\t[Fin errores]\t-----------\n\n\n");
+    fclose(errores);
+  }
   return 0;
 }

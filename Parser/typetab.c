@@ -127,6 +127,9 @@ void create_table_types(typetab *tt, void *parent){
     type struct_type = new_type();
     struct_type.type = 5;
 
+    type string_type = new_type();
+    string_type.type = 6;
+    
     tt->parent = parent;
     tt->types[0] = void_type;
     tt->types[1] = char_type;
@@ -134,7 +137,8 @@ void create_table_types(typetab *tt, void *parent){
     tt->types[3] = float_type;
     tt->types[4] = double_type;
     tt->types[5] = struct_type;
-    tt->count=6;
+    tt->types[6] = string_type;
+    tt->count=7;
 }
 
 

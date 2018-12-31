@@ -97,8 +97,9 @@ stack envs;
 /* Lista para las dimensiones de un arreglo.*/
 list dimensiones;
 
-/* Auxiliar para variables que no se puedan declarar. */
+/* Auxiliares para errores. */
 bool fail_decl = false;
+bool imprime_ci = true;
 
 exp math_function(exp e1, exp e2, int op);
 exp get_numero(numero);
@@ -268,6 +269,7 @@ lista :     lista
                     }                        
                     if(fail_decl){
                         fail_decl = false;
+                        imprime_ci = false;
                     }
                     else{
 
@@ -329,6 +331,7 @@ lista :     lista
                     }                  
                     if(fail_decl){
                         fail_decl = false;
+                        imprime_ci = false;
                     }
                     else {
                         sym symbol;
@@ -407,55 +410,64 @@ funciones : FUNC
                     if (search(&curr_env.symbols, $3) != -1)
                     {
                         yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $3);
-                        return 1;
-                    }
-                    add_context(true);
-                    func_decl = true;
+                        imprime_ci = false;
+                        fail_decl = true;
+                    }else{
+                            add_context(true);
+                            func_decl = true;
+                        }
                 }
              argumentos 
              RPAR LKEY  decl sentencias RKEY 
                 {
-                    print_context("Contexto local de: ", $3);
+                    if(fail_decl){
+                        fail_decl = false;
+                        imprime_ci = false;
+                    }
+                    else 
+                    {
+                        print_context("Contexto local de: ", $3);
 
-                    env fun_env;
-                    stack_peek(&envs, &fun_env);
+                        env fun_env;
+                        stack_peek(&envs, &fun_env);
 
-                    symtab *func_context = (symtab*) malloc(sizeof(symtab));
-                    *func_context = fun_env.symbols;
+                        symtab *func_context = (symtab*) malloc(sizeof(symtab));
+                        *func_context = fun_env.symbols;
 
-                    funrec reg;
-                    strcpy(reg.id, $3);
-                    reg.context = func_context;
-                    reg.params = num_params;
-                    reg.counter = 0;
-                    insert_fun(&global_funcs, reg);
+                        funrec reg;
+                        strcpy(reg.id, $3);
+                        reg.context = func_context;
+                        reg.params = num_params;
+                        reg.counter = 0;
+                        insert_fun(&global_funcs, reg);
 
-                    int func_tam = dir;
-                    del_context(false);
-                    
-                    env curr_env;
-                    stack_pop(&envs, &curr_env);
+                        int func_tam = dir;
+                        del_context(false);
+                        
+                        env curr_env;
+                        stack_pop(&envs, &curr_env);
 
-                    /* Agregamos el nombre de la función al contexto donde se puede llamar. */
-                    sym symbol;
-                    strcpy(symbol.id, $3);
-                    symbol.type = $2;
-                    symbol.dir = dir;
-                    dir += func_tam;
+                        /* Agregamos el nombre de la función al contexto donde se puede llamar. */
+                        sym symbol;
+                        strcpy(symbol.id, $3);
+                        symbol.type = $2;
+                        symbol.dir = dir;
+                        dir += func_tam;
 
-                    insert(&curr_env.symbols, symbol);
-                    stack_push(&envs, &curr_env);
+                        insert(&curr_env.symbols, symbol);
+                        stack_push(&envs, &curr_env);
 
-                    global_symbols = curr_env.symbols;
-                    func_decl = false;
-                    num_params = 0;
-                    print_funtable(&global_funcs);
+                        global_symbols = curr_env.symbols;
+                        func_decl = false;
+                        num_params = 0;
+                        print_funtable(&global_funcs);
+                    }
                 }
              funciones 
                 {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
             | %empty    {
                             if (!exists_main())
-                                return 1;
+                              return 1;
                             print_funtable(&global_funcs);
                             num_params = 0;
                         };
@@ -474,14 +486,20 @@ lista_args : lista_args COM tipo ID parte_arr
                     if (depth_search(&curr_env.symbols, $4) != -1)
                     {
                         yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $4);
-                        return 1;
+                        fail_decl = true;
                     }
 
+                    if(fail_decl){
+                        fail_decl = false;
+                        imprime_ci = false;
+                    }
+                    else 
+                    {
                     insert_sym($4, curr_env, $3);
 
                     /* Variable para funciones. */
                     num_params += 1;
-
+                    }
                     printf("lista_args -> lista_args , tipo id parte_arr\n");
                 }
             | tipo ID parte_arr 
@@ -492,14 +510,19 @@ lista_args : lista_args COM tipo ID parte_arr
                         if (depth_search(&curr_env.symbols, $2) != -1)
                         {
                             yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $2);
-                            return 1;
+                            fail_decl = true;
                         }
                         
+                        if(fail_decl){
+                            fail_decl = false;
+                            imprime_ci = false;
+                        }
+                        else{
                         insert_sym($2, curr_env, $1);
 
                         /* Variable para funciones. */
                         num_params += 1;
-                        
+                        }
                         printf("lista_args -> tipo id parte_arr\n");
 
                     }
@@ -685,8 +708,10 @@ sentencia :  IF LPAR condicion RPAR
                 {                       
                     call_params = 0;
                     int compatible = max_type($1.type, $3.type);
-                    if(compatible == -1) 
+                    if(compatible == -1) {
                         yyerror("Error: No se puede asignar, tipos incompatibles.");
+                        imprime_ci = false;
+                    }
                     else {
                         asignar($1,$3);
                         printf("sentencia -> parte_izq = expresion\n");
@@ -810,25 +835,26 @@ parte_izq : ID  {
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("[ERROR] No se ha declarado la variable", $1);
-                        return 1;
+                        fail_decl = true;
                     }
-                    strcpy($$.dir, $1);
-                    $$.type = get_type(&curr_env.symbols, $1);
+
+                    if(fail_decl){
+                        fail_decl = false;
+                        imprime_ci = false;
+                    }
+                    else{
+                        strcpy($$.dir, $1);
+                        $$.type = get_type(&curr_env.symbols, $1);
+                    }
                     printf("parte_izq -> id\n");
                 }
             | var_arreglo 
                 {
-                    if(fail_decl){
-                        fail_decl = false;
-                    }
-                    else
-                    {
-                        exp id;
-                        strcpy(id.dir,$1.arr);
-                        id.type = $1.type;
-                        $$ = asignar(id,$1);
-                        printf("parte_izq -> var_arreglo\n");
-                    }
+                    exp id;
+                    strcpy(id.dir,$1.arr);
+                    id.type = $1.type;
+                    $$ = asignar(id,$1);
+                    printf("parte_izq -> var_arreglo\n");
                 }
             | ID DOT ID 
                 {
@@ -860,7 +886,12 @@ var_arreglo : ID LCOR expresion RCOR
                     yyerror("[ERROR] Acceso inválido, es tipo struct y se está intentando acceder como un arreglo ");
                     fail_decl = true;
                     }
-                if(!fail_decl)
+                if(fail_decl)
+                {
+                    fail_decl = false;
+                    imprime_ci = false;
+                }
+                else
                 {
                     printf("CURR TYPE --->%d\n",curr_type);
 
@@ -914,7 +945,12 @@ var_arreglo : ID LCOR expresion RCOR
                     yyerror("[ERROR] Fuera de rango ");
                     fail_decl = true;
                 }
-                if(!fail_decl)
+                if(fail_decl)
+                {
+                    fail_decl = false;
+                    imprime_ci = false;
+                }
+                else
                     {
                         exp base_dir;
                         strcpy(base_dir.dir,$1.dir);
@@ -984,6 +1020,10 @@ expresion:   expresion MAS expresion
                 }
             | CADENA 
                 {
+                    $$.type = 6;
+                    $$.cadena = (char*) malloc(sizeof(char*));
+                    strcpy($$.cadena,$1);
+
                     printf("expresion -> cadena %s\n", $1);
                 }
             | NUMERO 
@@ -1002,38 +1042,51 @@ expresion:   expresion MAS expresion
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("[ERROR] No se encontró el identificador", $1);
-                        return 1;
+                        fail_decl = true;
                     }
-
-                    if (is_function(&global_funcs, $1))
+                    if(fail_decl){
+                        fail_decl = false;
+                        imprime_ci = false;
+                    }
+                    else
                     {
-                        funrec *rec = get_rec(&global_funcs, $1);
-                        if (rec->params != rec->counter)
+                        if (is_function(&global_funcs, $1))
                         {
-                            char *msg = (char*) malloc(sizeof(char*));
-                            sprintf(msg, "[ERROR] Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
-                            yyerror(msg);
-                            return -1;                            
+                            funrec *rec = get_rec(&global_funcs, $1);
+                            if (rec->params != rec->counter)
+                            {
+                                char *msg = (char*) malloc(sizeof(char*));
+                                sprintf(msg, "[ERROR] Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
+                                yyerror(msg);
+                                fail_decl = true;                            
+                            }
+                            rec->counter = 0;
                         }
-                        rec->counter = 0;
+                        else if ($4)
+                        {
+                            yyerror2("[ERROR] No corresponde a una función el identificador", $1);
+                            fail_decl = true;
+                        }
+                        if(fail_decl){
+                            fail_decl = false;
+                            imprime_ci = false;
+                        }
+                        else
+                        {
+                        stack_pop(&func_calls, &curr_function);
+                        /* Asigna tipo esperado. */
+                        strcpy($$.dir, $1);
+                        $$.type = get_type(&curr_env.symbols,$1);
+                        }
                     }
-                    else if ($4)
-                    {
-                        yyerror2("[ERROR] No corresponde a una función el identificador", $1);
-                        return -1;
-                    }
-
-                    stack_pop(&func_calls, &curr_function);
-                    /* Asigna tipo esperado. */
-                    strcpy($$.dir, $1);
-                    $$.type = get_type(&curr_env.symbols,$1);
                     printf("expresion -> id %s ( parametros )\n", $1);
                 }
             ;
 
 parametros: lista_param 
                 {
-                    $$ = true; printf("parametros-> lista_param\n");
+                    $$ = true; 
+                    printf("parametros-> lista_param\n");
                 }
             | %empty {$$ = false;};
 
@@ -1055,7 +1108,7 @@ lista_param: lista_param COM expresion
                     funrec *rec = get_rec(&global_funcs, curr_function);
 
                     if (check_args_types(rec, $3) < 0)
-                        return -1;
+                        return 1;
 
                     printf("lista_param -> lista_param , expresion\n");
                 }
@@ -1077,7 +1130,7 @@ lista_param: lista_param COM expresion
                     funrec *rec = get_rec(&global_funcs, curr_function);
 
                     if (check_args_types(rec, $1) < 0)
-                        return -1;
+                        return 1;
                     
                     printf("lista_param -> expresion\n");
                 };
@@ -1239,7 +1292,8 @@ void init()
 
 void finish()
 {
-    print_code(&codigo_intermedio);
+    if(imprime_ci)
+        print_code(&codigo_intermedio);
 }
 
 void print_context(char *s1, char *s2)
@@ -1350,8 +1404,10 @@ int max_type(int t1, int t2){
         /*Si son ambos números. */
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5) 
-            if (t1 < t2) {return t2;}
-            else { return t1; } 
+            if (t1 < t2) return t2;
+        else return t1;  
+        if (t1 > 6 &&  t2 == 6)
+            return -2; //Es posible que se intenta asignar una cadena a una char unidimensional
         /*Si no son números -> tipos incompatibles.
          Por ahora no se pude hacer int a char*/    
         return -1;
@@ -1365,14 +1421,15 @@ exp asignar(exp e1, exp e2){
     if (is_function(&global_funcs, e2.dir) == 1)
         call_function(&e2);
     cuadrupla cuad;
+    env curr_env;
+    stack_peek(&envs, &curr_env);
     /* Si se está pidiendo asignar un arreglo, i.e, e2.arr == ID*/
     if(strlen(e2.arr) > 0) {
         /* Verifica que exista el id. */
-        env curr_env;
-        stack_peek(&envs, &curr_env);
         if (depth_search(&curr_env.symbols, e2.arr) == -1)
         {
             yyerror2("[ERROR] No se encontró el identificador", e2.arr);
+            imprime_ci = false;
         }
         else{
             cuad.op = AS_ARR;
@@ -1387,17 +1444,49 @@ exp asignar(exp e1, exp e2){
             return e;
         }
     }
-    else {
-        cuad.op  = AS;
+    else
+    {
         strcpy(&cuad.res, e1.dir);
         strcpy(e.dir, e1.dir);
         int t1 = e1.type;
         int t2 = e2.type;
         e.type = t1;
-        if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
-        else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
-        insert_cuad(&codigo_intermedio, cuad);
-        return e;
+        if(t1 > 6 && t2 == 6){
+            int base = get_base(&curr_env.types, t1);
+            if(base == 1){ //Se va a asignar una cadena a un arreglo de chars unidimensional
+                int dim = get_dim(&curr_env.types,t1);
+                printf("---------------ENTROOOOO %s\n", e2.cadena);
+                int len = strlen(e2.cadena);
+                if(len <= dim +2){
+                    cuad.op  = ASS;
+                    cuad.string_op = (char*) malloc(sizeof(char*));
+                    printf("-----> cadena : %s\n", e2.cadena);
+                    strcpy(cuad.string_op, e2.cadena);
+                    insert_cuad(&codigo_intermedio, cuad);
+                    return e;
+                }
+                else 
+                {
+                    fail_decl = true;
+                    //char *msg = (char*) malloc(sizeof(char*));
+                    //sprintf(msg, "[ERROR] Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor.",len, dim);
+                    yyerror("[ERROR] Fuera de rango, se está intentando asignar una cadena con longitud a un arreglo de chars con dimension menor.");
+                    imprime_ci = false;
+                }
+            }
+            else 
+            {
+                yyerror("[ERROR] Solo se pueden asignar cadenas a arreglos unidimensionas de tipo char.");
+                imprime_ci = false;
+            }
+        }
+        else{
+        cuad.op  = AS;
+            if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
+            else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
+            insert_cuad(&codigo_intermedio, cuad);
+            return e;
+        }
     }
 }
 

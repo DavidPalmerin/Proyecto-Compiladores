@@ -16,6 +16,7 @@ extern "C" {
     typedef struct _exp{
         char dir[32];
         char arr[32];
+        char * cadena;
         int type;
     } exp;
     

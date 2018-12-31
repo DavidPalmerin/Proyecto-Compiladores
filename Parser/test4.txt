@@ -11,6 +11,8 @@ func int soo()
 {
 	int pro;
 	pro = 2;
+	c = "ho";
+	//c = "hola";
 }
 
 func int main(int j, int k)
