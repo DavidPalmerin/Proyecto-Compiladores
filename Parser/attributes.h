@@ -30,6 +30,11 @@ extern "C" {
         int count;
     } labels;
 
+    typedef struct _bools{
+        labels trues;
+        labels falses;
+    } bools;
+
     typedef struct _env
     {
         symtab symbols;

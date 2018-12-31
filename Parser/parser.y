@@ -108,10 +108,7 @@ exp identificador(char *);
 exp asignar(exp e1,exp e2);
 
 void gen_cond_goto(char dir[32]);
-void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
-
-void gen_cond_goto(char dir[32]);
-void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op);
+bools * gen_cond_rel(char e1[32], char e2[32], int op);
 
 /* Funciones auxiliares para la comprobación de tipos */
 int max_type(int t1, int t2);
@@ -125,13 +122,6 @@ char *newLabel();
 char *newIndex();
 
 %}
-
-%code requires{
-    typedef struct _bools{
-        labels trues;
-        labels falses;
-    } bools;
-}
 
 %union{   
     int    rel;
@@ -902,24 +892,73 @@ var_arreglo : ID LCOR expresion RCOR
                     exp arr_index = $3;
                     //printf("->> Index: %s\n",arr_index.dir);
                     //printf("->> Tipo base: %d\n",base_type);
+                    /*
+                    bools * _and = (bools*) malloc(sizeof(bools));
+                    //index > -1
+                    bools * no_negativo = (bools*) malloc(sizeof(bools));
+                    // index < dimension actual
+                    bools * en_rango  = (bools*) malloc(sizeof(bools));
                     
-                    /*index > -1
-                    exp menosuno;
-                    menosuno.type = 2;
-                    sprintf(menosuno.dir,"%d",-1);
-                    bools * condicion = relational_op(arr_index,menosuno,GT);
-                    cuadrupla cuad;
-                    cuad.op = LB;
-                    strcpy(cuad.op1, "");
-                    strcpy(cuad.op2, "");
-                    strcpy(cuad.res, get_first(&condicion->trues));
-                    if (strcmp(cuad.res, "") != 0)
-                        insert_cuad(&codigo_intermedio, cuad);
+                    char * menos_uno = (char*) malloc(32 * sizeof(char));
+                    sprintf(menos_uno, "%d", -1);
+                    
+                    char * dim_act = (char*) malloc(32 * sizeof(char));
+                    sprintf(dim_act, "%d", get_dim(&curr_env.types,curr_type));
+                    
+                    no_negativo = gen_cond_rel(arr_index.dir,menos_uno,GT);
+                    en_rango = gen_cond_rel(arr_index.dir,dim_act,LT);
+
+                    cuadrupla cuad1;
+                    cuad1.op = LB;
+                    strcpy(cuad1.op1, "");
+                    strcpy(cuad1.op2, "");
+                    strcpy(cuad1.res, get_first(&no_negativo->trues));
+                    insert_cuad(&codigo_intermedio, cuad1);
+                
+                    char label[32];
+                    strcpy(label, newLabel());
+                    backpatch(&no_negativo->trues, label, &codigo_intermedio);
+                    _and = (bools*) malloc(sizeof(bools));
+                    _and->falses = merge(&no_negativo->falses, &en_rango->falses);
+                    _and->trues = en_rango->trues;
+                    
+                    cuadrupla cuad2;
+                    cuad2.op = LB;
+                    strcpy(cuad2.op1, "");
+                    strcpy(cuad2.op2, "");
+                    strcpy(cuad2.res, get_first(&_and->trues));
+                    if (strcmp(cuad2.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad2);
+              
+                    cuadrupla cuad3;
+                    cuad3.op = LB;
+                    strcpy(cuad3.op1, "");
+                    strcpy(cuad3.op2, "");
+                    strcpy(cuad3.res, 
+                    get_first(&_and->falses));
+                    if (strcmp(cuad3.res, "") != 0)
+                        insert_cuad(&codigo_intermedio, cuad3);
+
+                    char label1[32], label2[32];
+                    strcpy(label1, newLabel());
+                    strcpy(label2, newLabel());
+                    backpatch(&_and->trues, label1, &codigo_intermedio);
+                    backpatch(&_and->falses, label2, &codigo_intermedio);
                     */
+
                     $$.type = base_type;
                     /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
                     dir = base_dir + (index * tam_base) + ...*/
-                    
+                    //Verificación, solo funciona con números (no expresiones).
+                    if(arr_index.dir[0] != 't'){
+                        if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,curr_type))
+                            {
+                                yyerror("[ERROR] Fuera de rango, index inávildo.");
+                                imprime_ci = false;
+                            }
+                    }
+                    else
+                    {                 
                     exp tam_act;
                     tam_act.type = 2;
                     sprintf(tam_act.dir, "%d",get_tam(&curr_env.types,base_type));
@@ -928,7 +967,7 @@ var_arreglo : ID LCOR expresion RCOR
 
                     strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
                     //printf("->> Dir act: %s\n",$$.dir);
-
+                    }
                     fprintf(producciones,"var_arreglo -> id [ expresion ] \n");
                     
 
@@ -969,7 +1008,16 @@ var_arreglo : ID LCOR expresion RCOR
                         $$.type = base_type;
                         /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
                         dir = base_dir + (index * tam_base) + ...*/
-                        
+                        //Verificación, solo funciona con números (no expresiones).
+                        if(arr_index.dir[0] != 't'){
+                            if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,$1.type))
+                                {
+                                    yyerror("[ERROR] Fuera de rango, index inávildo.");
+                                    imprime_ci = false;
+                                }
+                        }
+                        else
+                        {  
                         exp tam_act;
                         tam_act.type = 2;
                         sprintf(tam_act.dir,"%d", get_tam(&curr_env.types,base_type));
@@ -977,7 +1025,7 @@ var_arreglo : ID LCOR expresion RCOR
                         exp curr_dir = math_function(arr_index,tam_act,ML);
 
                         strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
-                      
+                        }
                         fprintf(producciones,"var_arreglo -> var arreglo [ expresion ]\n");
                     }
                 };
@@ -1189,38 +1237,7 @@ condicion:  condicion OR
                 }
             | expresion relacional expresion
                 {
-                    char i[32];
-                    char i2[32];
-                    char temp[32];
-                    strcpy(i, newIndex());
-                    strcpy(i2, newIndex());
-                    strcpy(temp, newTemp());
-
-                    $$ = (bools*) malloc(sizeof(bools));
-                    $$->trues = create_list(i);
-                    $$->falses = create_list(i2);
-
-                    cuadrupla c, c1, c2;
-                    
-                    c.op = $2;
-                    strcpy(c.op1, $1.dir);
-                    strcpy(c.op2, $3.dir);
-                    strcpy(c.res, temp);
-
-                    c1.op = IFF;
-                    strcpy(c1.op1, temp);
-                    strcpy(c1.op2, "GOTO");
-                    strcpy(c1.res, i);
-
-                    c2.op = GOTO;
-                    strcpy(c2.op1, "");
-                    strcpy(c2.op2, "");
-                    strcpy(c2.res, i2);
-
-                    insert_cuad(&codigo_intermedio, c);
-                    insert_cuad(&codigo_intermedio, c1);
-                    insert_cuad(&codigo_intermedio, c2);
-
+                    $$  = gen_cond_rel($1.dir, $3.dir, $2);
                     fprintf(producciones,"condicion -> expresion rel expresion \n");
                 }
             | TRUE 
@@ -1613,23 +1630,41 @@ void gen_cond_goto(char dir[32])
     insert_cuad(&codigo_intermedio, cuad);
 }
 
-void gen_cond_rel(char e1[32], char e2[32], char dir[32], int op)
+bools * gen_cond_rel(char e1[32], char e2[32], int op)
 {
-    char *t = (char*) malloc(32 * sizeof(char));
-    strcpy(t, newTemp());
-    
-    cuadrupla cuad;
-    cuad.op = op;
-    strcpy(cuad.op1, e1);
-    strcpy(cuad.op2, e2);
-    strcpy(cuad.res, t);
-    insert_cuad(&codigo_intermedio, cuad);
+    char i[32];
+    char i2[32];
+    char temp[32];
+    strcpy(i, newIndex());
+    strcpy(i2, newIndex());
+    strcpy(temp, newTemp());
 
-    cuadrupla iff;
-    iff.op  = IFF;
-    strcpy(iff.op1, t);
-    strcpy(iff.res, dir);
-    insert_cuad(&codigo_intermedio, iff);
+    bools * b = (bools*) malloc(sizeof(bools));
+    b->trues = create_list(i);
+    b->falses = create_list(i2);
+
+    cuadrupla c, c1, c2;
+    
+    c.op = op;
+    strcpy(c.op1, e1);
+    strcpy(c.op2, e2);
+    strcpy(c.res, temp);
+
+    c1.op = IFF;
+    strcpy(c1.op1, temp);
+    strcpy(c1.op2, "GOTO");
+    strcpy(c1.res, i);
+
+    c2.op = GOTO;
+    strcpy(c2.op1, "");
+    strcpy(c2.op2, "");
+    strcpy(c2.res, i2);
+
+    insert_cuad(&codigo_intermedio, c);
+    insert_cuad(&codigo_intermedio, c1);
+    insert_cuad(&codigo_intermedio, c2);
+
+    return b;
 }
 
 void insert_sym(char id[32], env curr_env, int tipo)

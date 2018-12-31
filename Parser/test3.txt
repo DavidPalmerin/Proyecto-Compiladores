@@ -1,6 +1,6 @@
-int ent, a[3][4];
+int ent, a[3][4][8];
 char c[2];
-double d[4];
+double d[4][9];
 struct {
 	int rk;
 	int lll;
@@ -16,12 +16,15 @@ func int main(int j)
 
 	int holi;
 	holi = 10.9;
-	if((4 < 3) && (9 > 0)){
+	/*if((4 < 3) && (9 > 0)){
 		c[0] = 'a';
 	}
 	if(!(holi() < 5))
 	{
 		holi = 8;
-	}
-	d[2] = 2.9;
+	}*/
+	c[9] = 'c';
+	a[1][0][0] = 21;
+	d[2][19] = 2.9;
+	holi = 9;
 }
