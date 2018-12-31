@@ -781,6 +781,9 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | PRINT expresion PYC 
                 {
+                    char i[32];
+                    strcpy(i, newIndex());
+                    $$ = create_list(i);
                     fprintf(producciones,"sentencia -> print expresion ;\n");
                 }
             ; 

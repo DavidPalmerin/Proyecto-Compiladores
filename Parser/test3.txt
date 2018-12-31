@@ -23,8 +23,9 @@ func int main(int j)
 	{
 		holi = 8;
 	}*/
-	c[2] = 'c';
+	c[1] = 'c';
 	a[1][0][0] = 21;
-	d[2][19] = 2.9;
+	//d[2][19] = 2.9;
 	holi = 9;
+	print "puta bida";
 }
