@@ -1,0 +1,85 @@
+tipo -> INT
+lista- >id arreglo
+arreglo -> id arreglo
+arreglo -> id arreglo
+lista -> lista , id arreglo
+tipo -> CHAR
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> DOUBLE
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+tipo -> CHAR
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+tipo -> struct { decl }
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+tipo -> INT
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+parte_izq -> id
+expresion -> num 2
+sentencia -> parte_izq = expresion
+sentencias -> sentencia
+tipo -> INT
+tipo -> INT
+lista_args -> tipo id parte_arr
+argumentos -> lista_args
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+parte_izq -> id
+expresion -> num 10.9
+sentencia -> parte_izq = expresion
+sentencias -> sentencia
+expresion -> num 4
+rel->  <
+expresion -> num 3
+condicion -> expresion rel expresion 
+condicion -> ( condicion )
+expresion -> num 9
+rel-> >
+expresion -> num 0
+condicion -> expresion rel expresion 
+condicion -> ( condicion )
+condicion -> condicion && condicion 
+expresion -> num 0
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> car 'a'
+sentencia -> parte_izq = expresion
+sentencias -> sentencia
+sentencia -> { sentencias }
+sentencias -> sentencias sentencia
+expresion -> id holi ( parametros )
+rel->  <
+expresion -> num 5
+condicion -> expresion rel expresion 
+condicion -> ( condicion )
+condicion -> ! condicion 
+parte_izq -> id
+expresion -> num 8
+sentencia -> parte_izq = expresion
+sentencias -> sentencia
+sentencia -> { sentencias }
+sentencias -> sentencias sentencia
+expresion -> num 2
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> num 2.9
+sentencia -> parte_izq = expresion
+sentencias -> sentencias sentencia
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+programa -> decl funciones

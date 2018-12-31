@@ -24,6 +24,7 @@ extern int yylineno;
 /* Ouput files */
 FILE *contexts;
 FILE *err;
+FILE *producciones;
 
 /* Funciones para el manejo de errores */
 void yyerror2(char*, char*);
@@ -201,7 +202,7 @@ programa:       { init(); }
                 }
             funciones   {
                             print_context("Contexto global", "");
-                            printf("programa -> decl funciones\n");
+                            fprintf(producciones,"programa -> decl funciones\n");
                             
                             finish();
                         };
@@ -211,29 +212,29 @@ decl :      tipo    {
                         current_dim = get_tam(&global_types,$1);
                     }      
             lista PYC decl {
-                                printf("decl -> tipo lista PYC decl\n");
+                                fprintf(producciones,"decl -> tipo lista PYC decl\n");
                             }
             | %empty {};
 
 tipo:        VOID   {    
                         $$ = 0;
-                        printf("tipo -> VOID\n");
+                        fprintf(producciones,"tipo -> VOID\n");
                     }
             | CHAR {
                         $$ = 1;
-                        printf("tipo -> CHAR\n");
+                        fprintf(producciones,"tipo -> CHAR\n");
                     }
             | INT   {
                         $$ = 2;
-                        printf("tipo -> INT\n");
+                        fprintf(producciones,"tipo -> INT\n");
                     }
             | FLOAT {
                         $$ = 3;
-                        printf("tipo -> FLOAT\n");
+                        fprintf(producciones,"tipo -> FLOAT\n");
                     }
             | DOUBLE{
                         $$ = 4;
-                        printf("tipo -> DOUBLE\n");
+                        fprintf(producciones,"tipo -> DOUBLE\n");
                     }
             | STRUCT{   
                         struct_decl = true;
@@ -241,7 +242,7 @@ tipo:        VOID   {
                     }
                 LKEY decl RKEY {
                                     $$ = 5;
-                                    printf("tipo -> struct { decl }\n");
+                                    fprintf(producciones,"tipo -> struct { decl }\n");
                                     del_context(false);
                                 };
 
@@ -313,7 +314,7 @@ lista :     lista
                             struct_dim += current_dim;
                         }
                         
-                        printf("lista -> lista , id arreglo\n");}
+                        fprintf(producciones,"lista -> lista , id arreglo\n");}
                 }
             | ID 
               arreglo
@@ -372,7 +373,7 @@ lista :     lista
                         if (current_type != 5 && struct_decl){
                             struct_dim += current_dim;
                         }
-                        printf("lista- >id arreglo\n");
+                        fprintf(producciones,"lista- >id arreglo\n");
                     }
                 };
 
@@ -382,7 +383,7 @@ arreglo : LCOR NUMERO RCOR arreglo
                     int num = atoi($2.val);
                     current_dim *= num;
                     list_append(&dimensiones, &num);
-                    printf("arreglo -> id arreglo\n");
+                    fprintf(producciones,"arreglo -> id arreglo\n");
                 }
                 else{ 
                     fail_decl = true;
@@ -464,7 +465,7 @@ funciones : FUNC
                     }
                 }
              funciones 
-                {printf("funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
+                {fprintf(producciones,"funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
             | %empty    {
                             if (!exists_main())
                               return 1;
@@ -474,7 +475,7 @@ funciones : FUNC
 
 argumentos : lista_args 
                         {
-                            printf("argumentos -> lista_args\n");
+                           fprintf(producciones,"argumentos -> lista_args\n");
                         }
             | %empty {};
 
@@ -500,7 +501,7 @@ lista_args : lista_args COM tipo ID parte_arr
                     /* Variable para funciones. */
                     num_params += 1;
                     }
-                    printf("lista_args -> lista_args , tipo id parte_arr\n");
+                    fprintf(producciones,"lista_args -> lista_args , tipo id parte_arr\n");
                 }
             | tipo ID parte_arr 
                     {
@@ -523,21 +524,21 @@ lista_args : lista_args COM tipo ID parte_arr
                         /* Variable para funciones. */
                         num_params += 1;
                         }
-                        printf("lista_args -> tipo id parte_arr\n");
+                        fprintf(producciones,"lista_args -> tipo id parte_arr\n");
 
                     }
 
 parte_arr : LCOR RCOR parte_arr 
-            {printf("parte_arr -> [] parte_arr\n");}
+            {fprintf(producciones,"parte_arr -> [] parte_arr\n");}
             | %empty {};
 
 sentencias : sentencias sentencia 
             {    
-                printf("sentencias -> sentencias sentencia\n");
+                fprintf(producciones,"sentencias -> sentencias sentencia\n");
             }
             | sentencia 
             {
-                 printf("sentencias -> sentencia\n");
+                fprintf(producciones,"sentencias -> sentencia\n");
             };
 
 sentif: ELSE sentencia | %empty{};
@@ -654,7 +655,7 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(cuad.res, label2);
                     insert_cuad(&codigo_intermedio, cuad);
 
-                    printf("sentencia -> do sentencias while ( condicion) ;\n"); 
+                    fprintf(producciones,"sentencia -> do sentencias while ( condicion) ;\n"); 
                 } 
             | FOR LPAR sentencia PYC 
                 {
@@ -701,7 +702,7 @@ sentencia :  IF LPAR condicion RPAR
                     backpatch(&$6->trues, label2, &codigo_intermedio);
                     backpatch(&$6->falses, label, &codigo_intermedio);
 
-                    printf("sentencia -> for ( sentencia ; condicion; sentencia ) sentencias\n");
+                    fprintf(producciones,"sentencia -> for ( sentencia ; condicion; sentencia ) sentencias\n");
                 }
 
             | parte_izq ASIG expresion PYC
@@ -714,16 +715,16 @@ sentencia :  IF LPAR condicion RPAR
                     }
                     else {
                         asignar($1,$3);
-                        printf("sentencia -> parte_izq = expresion\n");
+                        fprintf(producciones,"sentencia -> parte_izq = expresion\n");
                     }
                 }
             | RETURN expresion PYC
                 {
-                    printf("sentencia -> return expresion ;\n");
+                    fprintf(producciones,"sentencia -> return expresion ;\n");
                 }
             | RETURN PYC
                 {
-                    printf("sentencia -> return ;\n");
+                    fprintf(producciones,"sentencia -> return ;\n");
                 }
             | LKEY sentencias RKEY
                 {
@@ -731,7 +732,7 @@ sentencia :  IF LPAR condicion RPAR
                     $$ = $2;
                     strcpy(label, newLabel());
                     backpatch(&$2, label, &codigo_intermedio);
-                    printf("sentencia -> { sentencias }\n");
+                    fprintf(producciones,"sentencia -> { sentencias }\n");
                 }
             | SWITCH LPAR expresion RPAR
                 {
@@ -786,11 +787,11 @@ sentencia :  IF LPAR condicion RPAR
     
             | BREAK PYC 
                 {
-                    printf("sentencia -> break ;\n");
+                    fprintf(producciones,"sentencia -> break ;\n");
                 }
             | PRINT expresion PYC 
                 {
-                    printf("sentencia -> print expresion ;\n");
+                    fprintf(producciones,"sentencia -> print expresion ;\n");
                 }
             ; 
 
@@ -822,11 +823,14 @@ casos : CASE PUNES NUMERO
                 strcpy(cuad.res, label);
                 insert_cuad(&codigo_intermedio, cuad);
             }
-        casos { $$ = $7; }
+        casos 
+            {   
+                $$ = $7; fprintf(producciones, "casos : case : NUMERO sentencias casos");
+            }
         | %empty {$$ = switch_call;};
 
 predeterm : DEFAULT PUNES sentencia
-            {printf("predeterm -> default : sentencia\n");}
+            {fprintf(producciones,"predeterm -> default : sentencia\n");}
             | %empty {};
 
 parte_izq : ID  {
@@ -846,7 +850,7 @@ parte_izq : ID  {
                         strcpy($$.dir, $1);
                         $$.type = get_type(&curr_env.symbols, $1);
                     }
-                    printf("parte_izq -> id\n");
+                    fprintf(producciones,"parte_izq -> id\n");
                 }
             | var_arreglo 
                 {
@@ -854,11 +858,11 @@ parte_izq : ID  {
                     strcpy(id.dir,$1.arr);
                     id.type = $1.type;
                     $$ = asignar(id,$1);
-                    printf("parte_izq -> var_arreglo\n");
+                    fprintf(producciones,"parte_izq -> var_arreglo\n");
                 }
             | ID DOT ID 
                 {
-                    printf("parte_izq -> id.id\n");
+                    fprintf(producciones,"parte_izq -> id.id\n");
                 }
 
 var_arreglo : ID LCOR expresion RCOR 
@@ -893,13 +897,11 @@ var_arreglo : ID LCOR expresion RCOR
                 }
                 else
                 {
-                    printf("CURR TYPE --->%d\n",curr_type);
-
                     int base_type = get_base(&curr_env.types,curr_type);
 
                     exp arr_index = $3;
-                    printf("->> Index: %s\n",arr_index.dir);
-                    printf("->> Tipo base: %d\n",base_type);
+                    //printf("->> Index: %s\n",arr_index.dir);
+                    //printf("->> Tipo base: %d\n",base_type);
                     
                     /*index > -1
                     exp menosuno;
@@ -925,9 +927,9 @@ var_arreglo : ID LCOR expresion RCOR
                     exp curr_dir = math_function(arr_index,tam_act,ML);
 
                     strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
-                    printf("->> Dir act: %s\n",$$.dir);
+                    //printf("->> Dir act: %s\n",$$.dir);
 
-                    printf("var_arreglo -> id [ expresion ] \n");
+                    fprintf(producciones,"var_arreglo -> id [ expresion ] \n");
                     
 
                 }
@@ -956,13 +958,13 @@ var_arreglo : ID LCOR expresion RCOR
                         strcpy(base_dir.dir,$1.dir);
                         base_dir.type = 2;
 
-                        printf("CURR TYPE --->%d\n",$1.type);
+                        //printf("CURR TYPE --->%d\n",$1.type);
 
                         int base_type = get_base(&curr_env.types,$1.type);
 
                         exp arr_index = $3;
-                        printf("->> Index: %s\n",arr_index.dir);
-                        printf("->> Tipo base: %d\n",base_type);
+                        //printf("->> Index: %s\n",arr_index.dir);
+                        //printf("->> Tipo base: %d\n",base_type);
                             
                         $$.type = base_type;
                         /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
@@ -976,47 +978,47 @@ var_arreglo : ID LCOR expresion RCOR
 
                         strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
                       
-                        printf("var_arreglo -> var arreglo [ expresion ]\n");
+                        fprintf(producciones,"var_arreglo -> var arreglo [ expresion ]\n");
                     }
                 };
 
 expresion:   expresion MAS expresion 
                 {
                     $$ = math_function($1,$3,MA);
-                    printf("expresion -> expresion + expresion \n");
+                    fprintf(producciones,"expresion -> expresion + expresion \n");
                 }
             | expresion MENOS expresion 
                 {
                     $$ = math_function($1,$3,MEN);
-                    printf("expresion -> expresion - expresion \n");
+                    fprintf(producciones,"expresion -> expresion - expresion \n");
                 }
             | expresion MUL expresion
                 {
                     $$ = math_function($1,$3,ML);
-                    printf("expresion -> expresion * expresion \n");
+                    fprintf(producciones,"expresion -> expresion * expresion \n");
                 }
             | expresion DIV expresion
                 {
                     $$ = math_function($1,$3,DV);
-                    printf("expresion -> expresion / expresion \n");
+                    fprintf(producciones,"expresion -> expresion / expresion \n");
                 }
             | expresion MOD expresion
                 {
                     $$ = math_function($1,$3,MD);
-                    printf("expresion -> expresion mod expresion \n");
+                    fprintf(producciones,"expresion -> expresion mod expresion \n");
                 }
             | var_arreglo
                 {
                     exp id;
                     strcpy(id.dir,$1.arr);
                     $$ = asignar(id,$1);
-                    printf("expresion -> var_arreglo\n");
+                    fprintf(producciones,"expresion -> var_arreglo\n");
                 }
             | CAR 
                 {   
                     $$.type = 1;
                     strcpy($$.dir, $1);
-                    printf("expresion -> car %s\n", $1);
+                    fprintf(producciones,"expresion -> car %s\n", $1);
                 }
             | CADENA 
                 {
@@ -1024,12 +1026,12 @@ expresion:   expresion MAS expresion
                     $$.cadena = (char*) malloc(sizeof(char*));
                     strcpy($$.cadena,$1);
 
-                    printf("expresion -> cadena %s\n", $1);
+                    fprintf(producciones,"expresion -> cadena %s\n", $1);
                 }
             | NUMERO 
                 {   $$.type = $1.type;
                     strcpy($$.dir, $1.val);
-                    printf("expresion -> num %s\n", $1.val);
+                    fprintf(producciones,"expresion -> num %s\n", $1.val);
                 }
             | ID  {
                     stack_push(&func_calls, $1);
@@ -1079,14 +1081,14 @@ expresion:   expresion MAS expresion
                         $$.type = get_type(&curr_env.symbols,$1);
                         }
                     }
-                    printf("expresion -> id %s ( parametros )\n", $1);
+                    fprintf(producciones,"expresion -> id %s ( parametros )\n", $1);
                 }
             ;
 
 parametros: lista_param 
                 {
                     $$ = true; 
-                    printf("parametros-> lista_param\n");
+                    fprintf(producciones,"parametros-> lista_param\n");
                 }
             | %empty {$$ = false;};
 
@@ -1110,7 +1112,7 @@ lista_param: lista_param COM expresion
                     if (check_args_types(rec, $3) < 0)
                         return 1;
 
-                    printf("lista_param -> lista_param , expresion\n");
+                    fprintf(producciones,"lista_param -> lista_param , expresion\n");
                 }
             | expresion 
                 {
@@ -1132,7 +1134,7 @@ lista_param: lista_param COM expresion
                     if (check_args_types(rec, $1) < 0)
                         return 1;
                     
-                    printf("lista_param -> expresion\n");
+                    fprintf(producciones,"lista_param -> expresion\n");
                 };
 
 condicion:  condicion OR 
@@ -1152,44 +1154,38 @@ condicion:  condicion OR
                     $$ = (bools*) malloc(sizeof(bools));
                     $$->trues = merge(&$1->trues, &$4->trues);
                     $$->falses = $4->falses;
-                    printf("condicion -> condicion && condicion \n");
+                    fprintf(producciones,"condicion -> condicion && condicion \n");
                  }
             | condicion AND 
                 {
-                    /*
                     cuadrupla cuad;
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, get_first($1.falses));
+                    strcpy(cuad.res, get_first(&$1->trues));
                     insert_cuad(&codigo_intermedio, cuad);
-                    */
                 }
               condicion     
                 {
-                    /*
                     char label[32];
                     strcpy(label, newLabel());
-                    $$.falses = merge(&$1.falses, &$4.falses);
-                    $$.trues = $4.trues;
-                    backpatch(&$1.trues, label, &codigo_intermedio);
-                    printf("condicion -> condicion && condicion \n");
-                    */
+                    backpatch(&$1->trues, label, &codigo_intermedio);
+                    $$ = (bools*) malloc(sizeof(bools));
+                    $$->falses = merge(&$1->falses, &$4->falses);
+                    $$->trues = $4->trues;
+                    fprintf(producciones,"condicion -> condicion && condicion \n");
                 }
             | NOT condicion 
                 {   
-                    /*
-                    $$.falses = $2.trues;
-                    $$.trues  = $2.falses;
-                    printf("condicion -> ! condicion \n");
-                    */
+                    $$ = (bools*) malloc(sizeof(bools));
+                    $$->falses = $2->trues;
+                    $$->trues  = $2->falses;
+                    fprintf(producciones,"condicion -> ! condicion \n");
                 }
             | LPAR condicion RPAR 
-                {
-                    /*
-                    $$.trues = $2.trues;
-                    $$.falses = $2.falses;
-                    */
+                {   
+                    $$ = $2;
+                    fprintf(producciones,"condicion -> ( condicion )\n");
                 }
             | expresion relacional expresion
                 {
@@ -1225,7 +1221,7 @@ condicion:  condicion OR
                     insert_cuad(&codigo_intermedio, c1);
                     insert_cuad(&codigo_intermedio, c2);
 
-                    printf("condicion -> expresion rel expresion \n");
+                    fprintf(producciones,"condicion -> expresion rel expresion \n");
                 }
             | TRUE 
                 {   
@@ -1234,7 +1230,7 @@ condicion:  condicion OR
                     strcpy(dir, newIndex());
                     $$->trues = create_list(dir);
                     gen_cond_goto(dir);
-                    printf("condicion -> true \n");
+                    fprintf(producciones,"condicion -> true \n");
                 }
             | FALSE 
                 {  
@@ -1243,16 +1239,16 @@ condicion:  condicion OR
                     strcpy(dir, newIndex());
                     $$->falses = create_list(dir);
                     gen_cond_goto(dir);
-                    printf("condicion -> false \n");
+                    fprintf(producciones,"condicion -> false \n");
                 }
             | %empty {} ;    
 
-relacional: MAYOR { $$ = GT; printf("rel-> >\n"); }
-          | MENOR { $$ = LT; printf("rel->  <\n");}
-          | MAYOR_IGUAL { $$ = GE; printf("rel->  >=\n");}
-          | MENOR_IGUAL { $$ = LE; printf("rel->  <=\n");}
-          | DIF { $$ = NE; printf("rel->  !=\n");}
-          | IGUAL { $$ = EQ; printf("rel->  ==\n");};
+relacional: MAYOR { $$ = GT; fprintf(producciones,"rel-> >\n"); }
+          | MENOR { $$ = LT; fprintf(producciones,"rel->  <\n");}
+          | MAYOR_IGUAL { $$ = GE; fprintf(producciones,"rel->  >=\n");}
+          | MENOR_IGUAL { $$ = LE; fprintf(producciones,"rel->  <=\n");}
+          | DIF { $$ = NE; fprintf(producciones,"rel->  !=\n");}
+          | IGUAL { $$ = EQ; fprintf(producciones,"rel->  ==\n");};
 %%
 
 void yyerror(char *s){
@@ -1398,7 +1394,7 @@ bool exists_main()
 
 
 int max_type(int t1, int t2){
-    printf("TIPO 1: %d, TIPO 2: %d\n",t1,t2);
+    //printf("TIPO 1: %d, TIPO 2: %d\n",t1,t2);
     if (t1 == t2) return t1;
     else {
         /*Si son ambos números. */
@@ -1455,12 +1451,10 @@ exp asignar(exp e1, exp e2){
             int base = get_base(&curr_env.types, t1);
             if(base == 1){ //Se va a asignar una cadena a un arreglo de chars unidimensional
                 int dim = get_dim(&curr_env.types,t1);
-                printf("---------------ENTROOOOO %s\n", e2.cadena);
                 int len = strlen(e2.cadena);
                 if(len <= dim +2){
                     cuad.op  = ASS;
                     cuad.string_op = (char*) malloc(sizeof(char*));
-                    printf("-----> cadena : %s\n", e2.cadena);
                     strcpy(cuad.string_op, e2.cadena);
                     insert_cuad(&codigo_intermedio, cuad);
                     return e;
@@ -1677,7 +1671,7 @@ void insert_sym(char id[32], env curr_env, int tipo)
     stack_push(&envs, &curr_env);
     if (struct_decl){
         struct_dim += current_dim;
-         printf("->>>struct:%d\n",struct_dim);
+        // printf("->>>struct:%d\n",struct_dim);
         /*type arr = new_type();
         arr.base = symbol.type;
         arr.tam = struct_dim;
@@ -1691,7 +1685,7 @@ int check_args_types(funrec *rec, exp expr)
     {
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
-        printf("FUNC %s", expr.dir);
+        fprintf(producciones,"func %s", expr.dir);
         print_table(rec->context->symbols);
         if (tipo != expr.type)
         {
@@ -1708,24 +1702,3 @@ int check_args_types(funrec *rec, exp expr)
     }
     return 0;
 }
-
-
-/*
-mif :  IF LPAR condicion RPAR mif ELSE mif {printf("mif -> if ( condicion ) mif else mif\n");}
-            | sentencias {printf("mif -> sentencias\n");};
-
-uif : IF LPAR condicion RPAR sentencias  
-      {printf("uif -> if ( condicion ) sentencias\n");}
-      | IF LPAR condicion RPAR mif ELSE uif
-      {printf("uif -> if ( condicion ) mif else uif\n");};
-
-sentif : ELSE sentencias
-        {printf("sentif -> else sentencias\n");}
-        | %prec IFX %empty {};
-
-
--- Esto lo reconoce el lexer.
-sentif : sentencias ELSE sentencias
-        {printf("sentif -> else sentencias\n");}
-        | sentencias;
-*/

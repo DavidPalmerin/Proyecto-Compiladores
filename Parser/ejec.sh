@@ -5,6 +5,6 @@ flex lexer.flex
 bison -d parser.y
 #/usr/local/opt/bison@3.2/bin/bison -d parser.y
 gcc *.c -o gram
-./gram test4.txt
+./gram test3.txt
 cat contexts.txt
 cat codigo.ci

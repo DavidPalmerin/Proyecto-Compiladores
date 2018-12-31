@@ -28,6 +28,7 @@ extern FILE *errores_lexicos;
 extern FILE *comentarios;
 extern FILE *contexts;
 extern FILE *err;
+extern FILE *producciones;
 
 
 int main(int argc, char **argv) {
@@ -42,6 +43,7 @@ int main(int argc, char **argv) {
   err = fopen("errores.txt", "w");
   contexts = fopen("contexts.txt", "w");
   comentarios = fopen("comentarios.txt", "w");
+  producciones = fopen("producciones.txt", "w");
   tokens_output = fopen("tokens_output.txt", "w");
   errores_lexicos = fopen("errores_lexicos.txt", "w");
 
@@ -58,15 +60,20 @@ int main(int argc, char **argv) {
   fclose(f);
   fclose(tokens_output);  
   fclose(errores_lexicos);
+  fclose(producciones);
   fclose(comentarios);
   fclose(contexts);
   fclose(err);
   FILE * errores = fopen("errores.txt","r");
-  if(errores){
+  char read;
+  read = getc(errores);
+  if(errores && read !=  EOF){
     printf("\n -----------\t  [Errores]  \t-----------\n\n");
-    char read;
-    while((read = getc(errores)) != EOF)
+    while(read != EOF)
+    {
         putchar(read);
+        read = getc(errores);
+    }
     printf("\n -----------\t[Fin errores]\t-----------\n\n\n");
     fclose(errores);
   }

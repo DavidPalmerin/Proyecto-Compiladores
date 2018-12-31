@@ -15,10 +15,13 @@ func int main(int j)
 {
 
 	int holi;
-	/*d = 0;
-
-	d = d();
-
-	c = 'a';*/
-	holi = 8;
+	holi = 10.9;
+	if((4 < 3) && (9 > 0)){
+		c[0] = 'a';
+	}
+	if(!(holi() < 5))
+	{
+		holi = 8;
+	}
+	d[2] = 2.9;
 }
