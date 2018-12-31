@@ -45,7 +45,7 @@ parte_izq -> id
 expresion -> num 10.9
 sentencia -> parte_izq = expresion
 sentencias -> sentencia
-expresion -> num 9
+expresion -> num 2
 var_arreglo -> id [ expresion ] 
 parte_izq -> var_arreglo
 expresion -> car 'c'

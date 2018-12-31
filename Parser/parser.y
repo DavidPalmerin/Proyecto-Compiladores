@@ -892,59 +892,6 @@ var_arreglo : ID LCOR expresion RCOR
                     exp arr_index = $3;
                     //printf("->> Index: %s\n",arr_index.dir);
                     //printf("->> Tipo base: %d\n",base_type);
-                    /*
-                    bools * _and = (bools*) malloc(sizeof(bools));
-                    //index > -1
-                    bools * no_negativo = (bools*) malloc(sizeof(bools));
-                    // index < dimension actual
-                    bools * en_rango  = (bools*) malloc(sizeof(bools));
-                    
-                    char * menos_uno = (char*) malloc(32 * sizeof(char));
-                    sprintf(menos_uno, "%d", -1);
-                    
-                    char * dim_act = (char*) malloc(32 * sizeof(char));
-                    sprintf(dim_act, "%d", get_dim(&curr_env.types,curr_type));
-                    
-                    no_negativo = gen_cond_rel(arr_index.dir,menos_uno,GT);
-                    en_rango = gen_cond_rel(arr_index.dir,dim_act,LT);
-
-                    cuadrupla cuad1;
-                    cuad1.op = LB;
-                    strcpy(cuad1.op1, "");
-                    strcpy(cuad1.op2, "");
-                    strcpy(cuad1.res, get_first(&no_negativo->trues));
-                    insert_cuad(&codigo_intermedio, cuad1);
-                
-                    char label[32];
-                    strcpy(label, newLabel());
-                    backpatch(&no_negativo->trues, label, &codigo_intermedio);
-                    _and = (bools*) malloc(sizeof(bools));
-                    _and->falses = merge(&no_negativo->falses, &en_rango->falses);
-                    _and->trues = en_rango->trues;
-                    
-                    cuadrupla cuad2;
-                    cuad2.op = LB;
-                    strcpy(cuad2.op1, "");
-                    strcpy(cuad2.op2, "");
-                    strcpy(cuad2.res, get_first(&_and->trues));
-                    if (strcmp(cuad2.res, "") != 0)
-                        insert_cuad(&codigo_intermedio, cuad2);
-              
-                    cuadrupla cuad3;
-                    cuad3.op = LB;
-                    strcpy(cuad3.op1, "");
-                    strcpy(cuad3.op2, "");
-                    strcpy(cuad3.res, 
-                    get_first(&_and->falses));
-                    if (strcmp(cuad3.res, "") != 0)
-                        insert_cuad(&codigo_intermedio, cuad3);
-
-                    char label1[32], label2[32];
-                    strcpy(label1, newLabel());
-                    strcpy(label2, newLabel());
-                    backpatch(&_and->trues, label1, &codigo_intermedio);
-                    backpatch(&_and->falses, label2, &codigo_intermedio);
-                    */
 
                     $$.type = base_type;
                     /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
