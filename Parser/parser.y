@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+/* Colores para mostra en terminal. */
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -201,7 +202,6 @@ programa:       { init(); }
             funciones   {
                             print_context("Contexto global", "");
                             fprintf(producciones,"programa -> decl funciones\n");
-                            
                             finish();
                         };
 
@@ -249,6 +249,7 @@ lista :     lista
             ID  
             arreglo
                 {
+                    /* Verificamos la existencia del identificador. */
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $3) != -1)
@@ -271,7 +272,8 @@ lista :     lista
                         imprime_ci = false;
                     }
                     else{
-
+                        /*Agregamos el elemento a la tabla de símbolos. Si es un arreglo
+                          calcula su direccion. */
                         sym symbol;
                         strcpy(symbol.id, $3);
                         symbol.type = current_type;
@@ -317,6 +319,7 @@ lista :     lista
             | ID 
               arreglo
                 {
+                    /*Verifica la existencia del identificador. */
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) != -1)
@@ -334,6 +337,7 @@ lista :     lista
                     }
                     else {
                         sym symbol;
+                        /* Caso especial para structs. */
                         if (current_type == 5)
                         {   
                             int last_dir = dir;
@@ -409,6 +413,7 @@ arreglo : LCOR NUMERO RCOR arreglo
 funciones : FUNC 
             tipo ID LPAR
                 {
+                    /* Asigna etiquetas a las funciones. */
                     cuadrupla cuad;
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
@@ -416,6 +421,9 @@ funciones : FUNC
                     strcpy(cuad.res, $3);
                     insert_cuad(&codigo_intermedio, cuad);
 
+                    /* Verifica el id de la función. 
+                        Crea un contexto nuevo en la pila si el id es válido.
+                    */
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (search(&curr_env.symbols, $3) != -1)
@@ -440,6 +448,8 @@ funciones : FUNC
                     {
                         print_context("Contexto local de: ", $3);
 
+                        /* Elimina el contexto de la función del tope de la pila y guarda el registro
+                           de la función */
                         env fun_env;
                         stack_peek(&envs, &fun_env);
 
@@ -478,6 +488,7 @@ funciones : FUNC
              funciones 
                 {fprintf(producciones,"funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones\n");}
             | %empty    {
+                            /* Verifica que la última función definida sea main. */
                             if (!exists_main())
                               return 1;
                             //print_funtable(&global_funcs);
@@ -554,6 +565,7 @@ sentencias : sentencias sentencia
 
 sentif: ELSE sentencia {
                 printf(ANSI_COLOR_RED "No se implementó función if else :(\n" ANSI_COLOR_RESET);
+                return -1;
                 $$.ifelse = true;
             }
     | %empty {$$.ifelse = false; };
@@ -719,14 +731,17 @@ sentencia :  IF LPAR condicion RPAR
             | parte_izq ASIG expresion PYC
                 {                       
                     call_params = 0;
-                    int compatible = max_type($1.type, $3.type);
-                    if(compatible == -1) {
-                        yyerror("No se puede asignar, tipos incompatibles.");
-                        imprime_ci = false;
-                    }
-                    else {
-                        asignar($1,$3);
-                        fprintf(producciones,"sentencia -> parte_izq = expresion\n");
+                    if (strcmp($3.dir, "SF") != 0)
+                    {
+                        int compatible = max_type($1.type, $3.type);
+                        if(compatible == -1) {
+                            yyerror("No se puede asignar, tipos incompatibles.");
+                            imprime_ci = false;
+                        }
+                        else {
+                            asignar($1,$3);
+                            fprintf(producciones,"sentencia -> parte_izq = expresion\n");
+                        }
                     }
                 }
             | RETURN expresion PYC
@@ -954,6 +969,7 @@ var_arreglo : ID LCOR expresion RCOR
                     {
                         yyerror2("No se encontró el identificador", $1);
                         fail_decl = true;
+                        return -1;
                     }
                 strcpy($$.arr,$1);
                 exp base_dir;
@@ -1121,6 +1137,7 @@ expresion:   expresion MAS expresion
                 }
             | ID  {
                     stack_push(&func_calls, $1);
+                    stack_peek(&func_calls, curr_function);
                   }                   
                 LPAR parametros RPAR 
                 {   
@@ -1135,6 +1152,8 @@ expresion:   expresion MAS expresion
                     if(fail_decl){
                         fail_decl = false;
                         imprime_ci = false;
+                        strcpy($$.dir, "SF");
+                        $$.type = -1;
                     }
                     else
                     {
@@ -1144,7 +1163,7 @@ expresion:   expresion MAS expresion
                             if (rec->params != rec->counter)
                             {
                                 char *msg = (char*) malloc(sizeof(char*));
-                                sprintf(msg, "Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
+                                sprintf(msg, "Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, rec->counter);
                                 yyerror(msg);
                                 fail_decl = true;                            
                             }
@@ -1185,18 +1204,19 @@ lista_param: lista_param COM expresion
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
                     if (is_function(&global_funcs, $3.dir) == 0)
+                    {
                         strcpy(cuad.res, $3.dir);
+                    }
                     else{
                         exp *e = call_function(&$3);
                         strcpy(cuad.res, e->dir);
                     }
-                    insert_cuad(&codigo_intermedio, cuad);
 
-                    stack_peek(&func_calls, curr_function);
                     funrec *rec = get_rec(&global_funcs, curr_function);
-
                     if (check_args_types(rec, $3) < 0)
-                        return 1;
+                        return -1;
+
+                    insert_cuad(&codigo_intermedio, cuad);
 
                     fprintf(producciones,"lista_param -> lista_param , expresion\n");
                 }
@@ -1207,19 +1227,18 @@ lista_param: lista_param COM expresion
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
                     if (is_function(&global_funcs, $1.dir) == 0)
+
                         strcpy(cuad.res, $1.dir);
                     else{
                         exp *e = call_function(&$1);
                         strcpy(cuad.res, e->dir);
                     }
-                    insert_cuad(&codigo_intermedio, cuad);
                     
-                    stack_peek(&func_calls, curr_function);
                     funrec *rec = get_rec(&global_funcs, curr_function);
+                    if(check_args_types(rec, $1) < 0)
+                        return -1;
+                    insert_cuad(&codigo_intermedio, cuad);
 
-                    if (check_args_types(rec, $1) < 0)
-                        return 1;
-                    
                     fprintf(producciones,"lista_param -> expresion\n");
                 };
 
@@ -1308,16 +1327,36 @@ relacional: MAYOR { $$ = GT; fprintf(producciones,"rel-> >\n"); }
           | IGUAL { $$ = EQ; fprintf(producciones,"rel->  ==\n");};
 %%
 
+/*
+ * Función para imprimir un error con el mensaje deseado.
+ * Se usan colores para hacer los comentarios amigables al usuario.
+ *
+ * Autor: Melissa Mendez Servín
+ *        Palmerin Morales David Gabriel.
+*/
 void yyerror(char *s){
     printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "%s: en la línea %d\n",s, yylineno);
     fprintf(err,"%s: en la línea %d\n",s, yylineno);
 }
 
+/*
+ * Función para imprimir un error concatenando los dos mensajes recibidos.
+ * El mensaje s será primero que el mensaje n.
+ * 
+ * Autor: Melissa Mendez Servín
+ *        Palmerin Morales David Gabriel.
+ */
 void yyerror2(char *s, char *n){
     printf(ANSI_COLOR_RED"Error:"ANSI_COLOR_RESET " %s %s: en la línea %d\n",s, n, yylineno);    
     fprintf(err,"%s %s: en la línea %d\n",s, n, yylineno);
 }
 
+/* Inicializa las variables necesarias para el análisis, tales como 
+ * pilas, tablas globales, etc.
+ * 
+ * Autores: Melissa Mendez Servín 
+ *          Palmerin Morales David Gabriel.
+ */
 void init()
 {
     create_code(&codigo_intermedio);
@@ -1343,6 +1382,13 @@ void init()
     list_new(&dimensiones, 10,NULL);
 }
 
+/* Función qu finaliza el análisis semántico.
+ * Se encarga de determinar si se debe de imprimir el código intermedio
+ * esto sucede si no ocurrió ningún error en el programa de entrada.
+ *
+ * Autores: Melissa Mendez Servín 
+ *.         Palmerin Morales David Gabriel.
+ */
 void finish()
 {
     if(imprime_ci){
@@ -1352,6 +1398,10 @@ void finish()
 
 }
 
+/* Imprime en un archivo la tabla de símbolos actual.
+ * La tabla de símbolos se encuentra en el ambiente del tope de la pila envs.
+ * Autor: Palmerín Morales David Gabriel.
+ */
 void print_context(char *s1, char *s2)
 {
     env curr_env;
@@ -1362,6 +1412,16 @@ void print_context(char *s1, char *s2)
     fprintf(contexts, "\n");
 }
 
+/* 
+ * Agrega un env nuevo a la pila envs. 
+ * Esta función se usa cuando queremos generar un contexto nuevo.
+ * Para el lenguaje dado, se suele usar cuando detectamos un struct y func.
+ * Recibe un booleano que indica si el nuevo contexto es para una función.
+ * Además, e encarga de guardar la dirección de la tabla de símbolos actual, 
+ * para que al regresar al contexto podamos saber donde continuar indexando.
+ *
+ * Autor: Palmerin Morales David Gabriel.
+*/
 void add_context(bool func_context)
 {
     /* Guardamos la última dirección usada en el ambiente actual. */
@@ -1390,6 +1450,16 @@ void add_context(bool func_context)
     dir = 0;
 }
 
+/*
+ * Elimina el contexto del tope de la pila.
+ * Al eliminarlo actualiza la variable dir para continuar un 
+ * correcto indexado.
+ * Recibe un booleano si se desea imprimir en consola el contexto 
+ * eliminado.
+ *
+ * Autor: Palmerín Morales David Gabriel.
+ *
+*/
 void del_context(bool print_context)
 {
     env curr_env;
@@ -1408,6 +1478,11 @@ void del_context(bool print_context)
     }
 }
 
+/*
+ * Se encarga de crear una etiqueta temporal para las variables.
+ *
+ * Autor: Adrian Ulises Mercado Martínez
+*/
 char* newTemp(){
     char *temporal= (char*) malloc(32*sizeof(char));
     strcpy(temporal , "t");
@@ -1418,6 +1493,11 @@ char* newTemp(){
     return temporal;
 }
 
+/*
+ * Se encarga de crear una etiqueta para las MIPS.
+ *
+ * Autor: Adrian Ulises Mercado Martínez
+*/
 char* newLabel(){
     char *temporal= (char*) malloc(32*sizeof(char));
     strcpy(temporal , "L");
@@ -1428,6 +1508,11 @@ char* newLabel(){
     return temporal;
 }
 
+/*
+ * Se encarga de crear una índice temporal para fines de backpatching.
+ *
+ * Autor: Adrian Ulises Mercado Martínez
+*/
 char* newIndex(){
     char *temporal= (char*) malloc(32*sizeof(char));
     strcpy(temporal , "I");
@@ -1438,6 +1523,11 @@ char* newIndex(){
     return temporal;
 }
 
+/*
+ * Verifica que la última función definida sea main.
+ * 
+ * Autor: Palmerin Morales David Gabriel.
+*/
 bool exists_main()
 {
     int index = global_symbols.count - 1;
@@ -1488,6 +1578,7 @@ exp asignar(exp e1, exp e2){
         {
             yyerror2("No se encontró el identificador", e2.arr);
             imprime_ci = false;
+
         }
         else{
             cuad.op = AS_ARR;
@@ -1538,7 +1629,15 @@ exp asignar(exp e1, exp e2){
         }
         else{
             cuad.op  = AS;
-            if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
+            if(t1 <= t2) {
+                char *op1 = reducir(e2.dir, t2, t1);
+                if (strcmp(op1, "SF") != 0){
+                    strcpy(&cuad.op1, op1);
+                }
+                else {
+                    yyerror("Ocurrió un error de asignación.");
+                }
+            }
             else strcpy(&cuad.op1, ampliar(e2.dir,t2,t1));
             insert_cuad(&codigo_intermedio, cuad);
             return e;
@@ -1546,6 +1645,16 @@ exp asignar(exp e1, exp e2){
     }
 }
 
+/*
+ * Crea una llamada a una función.
+ * Se crea una asignación AS, y el lado derecho consta 
+ * de call f n, donde call es una palabra para indicar a llamar
+ * la función, f es el identificador de la función, y n
+ * el número de argumentos que recibe.
+ * Agrega al código intermedio esta asignación.
+ *
+ * Autor: Palmerin Morales David Gabriel. 
+*/
 exp* call_function(exp *e)
 {
     cuadrupla cuad;
@@ -1603,9 +1712,9 @@ char *reducir(char * dir, int t, int w){
             return temp; 
         }        
     }
-    printf("Error: Esto no debería ocurrir\n");
-              
+    return "SF";
 }
+
 /* Ampliar el numero de la expresion con dirección dir,
     de tipo t al tipo w (más grande).*/
 char *ampliar(char *dir, int t, int w){
@@ -1638,7 +1747,7 @@ char *ampliar(char *dir, int t, int w){
             printf("Cast de float a double.\n");
         return temp;
     }        
-    printf("Error: Esto no debería ocurrir\n");
+    return "SF";
 }
 
 /* Te devuelve la expresión correspondiente a la operación
@@ -1663,6 +1772,13 @@ exp math_function(exp e1, exp e2, int op){
     return e;
 }
 
+/*
+ * Genera condiciones goto hacia la dirección recibida.
+ * Además la agrega al codigo intermedio.
+ * Se usan en condicion para True y False.
+ *
+ * Autor: Palmerin Morales David Gabriel.
+*/
 void gen_cond_goto(char dir[32])
 {
     if (strlen(dir) == 0)
@@ -1675,6 +1791,14 @@ void gen_cond_goto(char dir[32])
     insert_cuad(&codigo_intermedio, cuad);
 }
 
+/*
+ * Genera saltos para condicionales binarias.
+ * Crea índices en las listas trues y falses de una condición
+ * para que posteriormente estos índices se puedan hacer backpatch
+ * con alguna etiqueta.
+ *
+ * Autor: Adrian Ulises Mercado Martínez
+*/
 bools * gen_cond_rel(char e1[32], char e2[32], int op)
 {
     char i[32];
@@ -1712,6 +1836,15 @@ bools * gen_cond_rel(char e1[32], char e2[32], int op)
     return b;
 }
 
+/*
+ * Agrega un elemento a la tabla de símbolos actual.
+ * Actualiza las variables necesarias como dir.
+ * Verifica las dimensiones y calcula la nueva direccion para
+ * tal tabla de símbolos.
+ *
+ * Autores: Melissa Mendez Servín
+ *          Palmerin Morales David Gabriel.
+*/
 void insert_sym(char id[32], env curr_env, int tipo)
 {
     sym symbol;
@@ -1752,6 +1885,15 @@ void insert_sym(char id[32], env curr_env, int tipo)
     //if(struct_decl) struct_dim += current_dim;
 }
 
+/*
+ * Verifica el tipado de los argumentos de una función.
+ * Cada función tiene su definición de qué argumentos recibe y en qué orden.
+ * Al momento de realizar una llamada se debe verificar que estos argumentos
+ * coincidan con el tipo especificado en su definición.
+ * En caso de no coincidir, entonces se considera como error y se avisa al programador.
+ *
+ * Autor: Palmerin Morales David Gabriel.
+*/
 int check_args_types(funrec *rec, exp expr)
 {
     if (rec->counter < rec->params)
@@ -1759,7 +1901,6 @@ int check_args_types(funrec *rec, exp expr)
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
         fprintf(producciones,"func %s", expr.dir);
-        //print_table(rec->context->symbols);
         if (tipo != expr.type)
         {
             char *msg = (char*) malloc(sizeof(char*));
@@ -1771,7 +1912,8 @@ int check_args_types(funrec *rec, exp expr)
     }
     else
     {
-        //El identificador no cerresponde a un funcion.
+        yyerror2("Se encontraron más argumentos de los esperados en el identificador", rec->id);
+        return -1;
     }
     return 0;
 }

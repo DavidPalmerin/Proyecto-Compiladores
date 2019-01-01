@@ -1,0 +1,73 @@
+~ Contexto local de:  lolz
+POS	ID	TIPO	DIR
+0	j	2	0
+POS	type	TAM	DIM	T_BASE
+0	0	-1	-1	-1
+1	1	1	-1	-1
+2	2	4	-1	-1
+3	3	4	-1	-1
+4	2	8	-1	-1
+5	5	-1	-1	-1
+6	6	-1	-1	-1
+
+~ Contexto local de:  _foo
+POS	ID	TIPO	DIR
+0	j	2	0
+1	k	2	8
+2	l	2	16
+3	pro	2	24
+POS	type	TAM	DIM	T_BASE
+0	0	-1	-1	-1
+1	1	1	-1	-1
+2	2	4	-1	-1
+3	3	4	-1	-1
+4	2	8	-1	-1
+5	5	-1	-1	-1
+6	6	-1	-1	-1
+
+~ Contexto local de:  main
+POS	ID	TIPO	DIR
+0	j	2	0
+1	holi	2	4
+POS	type	TAM	DIM	T_BASE
+0	0	-1	-1	-1
+1	1	1	-1	-1
+2	2	4	-1	-1
+3	3	4	-1	-1
+4	2	8	-1	-1
+5	5	-1	-1	-1
+6	6	-1	-1	-1
+
+~ Contexto global 
+POS	ID	TIPO	DIR
+0	ent	2	0
+1	a	9	4
+2	ab	2	388
+3	b	2	392
+4	c	2	396
+5	d	2	400
+6	p	1	404
+7	q	1	405
+8	r	1	406
+9	s	1	407
+10	x	4	408
+11	y	4	416
+12	w	4	424
+13	z	4	432
+14	lol	5	440
+15	melissa	4	448
+16	lolz	2	464
+17	_foo	2	500
+18	main	2	536
+POS	type	TAM	DIM	T_BASE
+0	0	-1	-1	-1
+1	1	1	-1	-1
+2	2	4	-1	-1
+3	3	4	-1	-1
+4	2	8	-1	-1
+5	5	-1	-1	-1
+6	6	-1	-1	-1
+7	-1	0	8	6
+8	-1	0	4	7
+9	-1	0	3	8
+

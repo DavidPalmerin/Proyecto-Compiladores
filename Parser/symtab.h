@@ -62,6 +62,8 @@ extern "C" {
     void print_funtable(funtab* st);
     int is_function(funtab *tab, char id[32]);
     funrec* get_rec(funtab *tab, char id[32]);
+    int get_rec_counter(funtab *tab, char id[32]);
+
 
 
 #ifdef __cplusplus

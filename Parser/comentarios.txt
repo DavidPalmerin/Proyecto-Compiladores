@@ -1,0 +1,27 @@
+
+Encontré el siguiente comentario unilínea en la línea 2: 
+		char c[2];
+
+Encontré el siguiente comentario unilínea en la línea 3: 
+		double d[4][9];
+
+Encontré el siguiente comentario multilínea en la línea 40: 
+	if((4 < 3) && (9 > 0)){
+		c[0] = 'a';
+	}
+	if(!(holi() < 5))
+	{
+		holi = 8;
+	}
+
+Encontré el siguiente comentario unilínea en la línea 47: 
+		c[1] = 'c';
+
+Encontré el siguiente comentario unilínea en la línea 48: 
+		a[1][0][0] = 21;
+
+Encontré el siguiente comentario unilínea en la línea 49: 
+		d[2][19] = 2.9;
+
+Encontré el siguiente comentario unilínea en la línea 51: 
+		print "puta bida";

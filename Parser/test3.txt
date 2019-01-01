@@ -1,7 +1,7 @@
-//int ent, a[3][4][8];
+int ent, a[3][4][8];
 //char c[2];
 //double d[4][9];
-int a,b,c,d;
+int ab,b,c,d;
 char p,q,r,s;
 double x,y,w,z;
 struct {
@@ -10,7 +10,11 @@ struct {
 	char por;
 } lol;
 double melissa;
-func int _foo()
+func int lolz(int j)
+{
+	return 1;
+}
+func int _foo(int j, int k, int l)
 {
 	int pro;
 	pro =2;
@@ -31,7 +35,8 @@ func int main(int j)
 {
 
 	int holi;
-	lol.rk = _foo();
+	lol.rk = _foo(3, 3,0);
+	lol.rk = ent();
 	/*if((4 < 3) && (9 > 0)){
 		c[0] = 'a';
 	}
@@ -43,5 +48,5 @@ func int main(int j)
 	//a[1][0][0] = 21;
 	//d[2][19] = 2.9;
 	holi = 9;
-	print "puta bida";
+	//print "puta bida";
 }

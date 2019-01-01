@@ -122,8 +122,20 @@ funrec* get_rec(funtab *tab, char id[32])
 {
     int i;
     for (i = 0; i < tab->count; i++)
-        if (strcmp(tab->funs[i].id, id) == 0)
+        if (strcmp(tab->funs[i].id, id) == 0){
             return &tab->funs[i];
+        }
+    return NULL;
+}
+
+int get_rec_counter(funtab *tab, char id[32])
+{
+    int i;
+    for (i = 0; i < tab->count; i++)
+        if (strcmp(tab->funs[i].id, id) == 0){
+            return &tab->funs[i].counter;
+        }
+    return -1;
 }
 
 symtab* get_struct_content(symtab *st, char *id)
