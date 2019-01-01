@@ -1,12 +1,15 @@
-int ent, a[3][4][8];
-char c[2];
-double d[4][9];
+//int ent, a[3][4][8];
+//char c[2];
+//double d[4][9];
+int a,b,c,d;
+char p,q,r,s;
+double x,y,w,z;
 struct {
 	int rk;
 	int lll;
 	char por;
 } lol;
-
+double melissa;
 func int _foo()
 {
 	int pro;

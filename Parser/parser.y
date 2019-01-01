@@ -38,6 +38,7 @@ void yyerror(char *);
 
 /* Variable para el conteo de direcciones */
 int dir=0;
+int top_dir = 0;
 
 /* Variables para guardar el tipo y ancho actual */
 int current_type;
@@ -335,17 +336,19 @@ lista :     lista
                         sym symbol;
                         if (current_type == 5)
                         {   
+                            int last_dir = dir;
                             env struct_env;
                             stack_peek(&envs, &struct_env);
                             symtab *syms = (symtab*) malloc(sizeof(symtab));
                             *syms = struct_env.symbols;
                             symbol.struct_content = syms;
                             del_context(false);
+                            symbol.dir = top_dir;
                         }
+                        else symbol.dir = dir;
 
                         strcpy(symbol.id, $1);
                         symbol.type = current_type;
-                        symbol.dir  = dir;
                         dir += current_dim;
 
                         stack_pop(&envs, &curr_env);
@@ -377,7 +380,7 @@ lista :     lista
 
                         insert(&curr_env.symbols, symbol);
                         stack_push(&envs, &curr_env);
-                        if (current_type != 5 && struct_decl){
+                        if (struct_decl){
                             struct_dim += current_dim;
                         }
                         fprintf(producciones,"lista- >id arreglo\n");
@@ -1400,7 +1403,8 @@ void del_context(bool print_context)
     if (stack_size(&envs) > 0)
     {   
         stack_peek(&envs, &curr_env);
-        dir = curr_env.symbols.last_dir;
+        top_dir = curr_env.symbols.last_dir;
+        dir += curr_env.symbols.last_dir;
     }
 }
 
@@ -1745,14 +1749,7 @@ void insert_sym(char id[32], env curr_env, int tipo)
     list_new(&dimensiones, 10,NULL);
     
     stack_push(&envs, &curr_env);
-    if (struct_decl){
-        struct_dim += current_dim;
-        // printf("->>>struct:%d\n",struct_dim);
-        /*type arr = new_type();
-        arr.base = symbol.type;
-        arr.tam = struct_dim;
-        */
-    }
+    //if(struct_decl) struct_dim += current_dim;
 }
 
 int check_args_types(funrec *rec, exp expr)
