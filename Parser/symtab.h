@@ -55,7 +55,8 @@ extern "C" {
     int get_dir(symtab*, char*);
     void create_table(symtab *st, void *parent);
     int get_type(symtab*, char *);
-    
+    symtab* get_struct_content(symtab *st, char *);
+
     void create_funtab(funtab *tab);
     int insert_fun(funtab *tab, funrec rec);
     void print_funtable(funtab* st);

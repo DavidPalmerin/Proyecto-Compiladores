@@ -240,7 +240,7 @@ tipo:        VOID   {
                 LKEY decl RKEY {
                                     $$ = 5;
                                     fprintf(producciones,"tipo -> struct { decl }\n");
-                                    del_context(false);
+                                    //del_context(false);
                                 };
 
 lista :     lista 
@@ -333,6 +333,16 @@ lista :     lista
                     }
                     else {
                         sym symbol;
+                        if (current_type == 5)
+                        {   
+                            env struct_env;
+                            stack_peek(&envs, &struct_env);
+                            symtab *syms = (symtab*) malloc(sizeof(symtab));
+                            *syms = struct_env.symbols;
+                            symbol.struct_content = syms;
+                            del_context(false);
+                        }
+
                         strcpy(symbol.id, $1);
                         symbol.type = current_type;
                         symbol.dir  = dir;
@@ -888,7 +898,7 @@ parte_izq : ID  {
                 {
                     env curr_env;
                     stack_peek(&envs, &curr_env);
-                    if(depth_search(&curr_env.symbols, $1) == 1)
+                    if(depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("No se ha declarado la variable", $1);
                         fail_decl = true;
@@ -902,9 +912,32 @@ parte_izq : ID  {
                         int type = get_type(&curr_env.symbols, $1);
                         if (type != 5)
                         {
-                            yyerror("Solo puedes obtener el atributo de un struct");
+                            yyerror2($1, "no es de tipo struct");
+                            imprime_ci = false;
+                            /* A fuerzas debe terminar el programa pues genera un segmentation fault. */
+                            return -1;
                         }
-                        $$.type = type;
+
+                        env curr_env;
+                        stack_peek(&envs, &curr_env);
+                        symtab *struct_content = get_struct_content(&curr_env.symbols, $1);
+                        if(depth_search(struct_content, $3) == -1)
+                        {   
+                            print_table(struct_content);
+                            yyerror2("No existe tal atributo en el struct con nombre", $1);
+                            fail_decl = true;
+                        }
+                        if(fail_decl){
+                            fail_decl = false;
+                            imprime_ci = false;
+                        }
+                        else{
+                            //Asignar dirección.
+                            // La direcicón de $1 está en env.symbols (o en parent) y la del atributo está en struct_content.
+                            strcmp($$.dir,newTemp());
+                            
+                            $$.type = get_type(struct_content, $3);
+                        } 
                     }
 
                     fprintf(producciones,"parte_izq -> id.id\n");

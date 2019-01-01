@@ -126,4 +126,17 @@ funrec* get_rec(funtab *tab, char id[32])
             return &tab->funs[i];
 }
 
+symtab* get_struct_content(symtab *st, char *id)
+{
+    symtab *parent = st->parent;
+    int exists = search(st, id);
+    if (exists == -1 && parent != NULL){
+        exists = search(parent, id);
+        return parent->symbols[exists].struct_content;
+    }
+    if (exists) 
+        return st->symbols[exists].struct_content;
+    return -1;
+}
+
 

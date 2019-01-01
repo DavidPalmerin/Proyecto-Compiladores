@@ -28,7 +28,7 @@ func int main(int j)
 {
 
 	int holi;
-	holi = _foo();
+	lol.rk = _foo();
 	/*if((4 < 3) && (9 > 0)){
 		c[0] = 'a';
 	}
