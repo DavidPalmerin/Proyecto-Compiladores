@@ -17,14 +17,14 @@ func int soo()
 
 func int main(int j, int k)
 {
-	a[0][3] = 3;
-	switch(3){
+	//a[0][3] = 3;
+	/*switch(3){
 		case : 0
 			j = 0;
 			k = 2;
 			j = 3;
 		case : 1
 			j = 1;
-	}
+	}*/
 	j = 2;
 }

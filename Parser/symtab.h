@@ -18,6 +18,7 @@ extern "C" {
         char id[32];
         int type;
         int dir;
+        void *struct_content;
     };
     
     typedef struct _symbol sym;

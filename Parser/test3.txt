@@ -6,16 +6,29 @@ struct {
 	int lll;
 	char por;
 } lol;
+
 func int _foo()
 {
 	int pro;
 	pro =2;
+	if (!(2 < 3 && 3 < 4))
+		pro = 3;
+	switch  (2 + 3){
+		case : 0
+			pro = 0;
+		case : 1
+			pro = 1;
+		default:
+			pro = -1;
+	}
+		
+	return 3232;
 }
 func int main(int j)
 {
 
 	int holi;
-	holi = 10.9;
+	holi = _foo();
 	/*if((4 < 3) && (9 > 0)){
 		c[0] = 'a';
 	}
@@ -23,8 +36,8 @@ func int main(int j)
 	{
 		holi = 8;
 	}*/
-	c[1] = 'c';
-	a[1][0][0] = 21;
+	//c[1] = 'c';
+	//a[1][0][0] = 21;
 	//d[2][19] = 2.9;
 	holi = 9;
 	print "puta bida";

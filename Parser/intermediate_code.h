@@ -32,6 +32,7 @@ extern "C" {
 #define CALL 18
 #define AS_ARR 19
 #define ASS 20
+#define RET 21
 
 #define MAX_CODE 1000
 

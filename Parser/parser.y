@@ -9,6 +9,12 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+
 #include "list.h"
 #include "attributes.h"
 #include "intermediate_code.h"
@@ -54,7 +60,7 @@ int indice = 0;
 int index_dim = 0;
 
 /* Variable para el unico atributo heredado de sentencia prima*/
-labels lfalses;
+labels lcontrol;
 
 /* Variable para la tabla de símbolos*/
 symtab global_symbols;
@@ -68,6 +74,7 @@ int    num_params = 0;
 int    call_params = 0;
 char   curr_function[32];
 stack  func_calls;
+int    return_type = -1;
 
 /* Pila para cases de switch*/
 stack switchesback;
@@ -245,12 +252,12 @@ lista :     lista
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $3) != -1)
                     {
-                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $3);
+                        yyerror2("Ya existe un identificador con el nombre", $3);
                         fail_decl = true;
                     }                
                     if (current_type == 5)
                     {
-                        yyerror("[ERROR] Struct solo puede tener un identificador.");
+                        yyerror("Struct solo puede tener un identificador.");
                         fail_decl = true;
                     }
                     if(current_type == 0)
@@ -313,11 +320,11 @@ lista :     lista
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) != -1)
                     {
-                        yyerror2("[ERROR] Ya existe un identificador con el nombre", $1);
+                        yyerror2("Ya existe un identificador con el nombre", $1);
                         fail_decl = true;
                     }
                     if(current_type == 0){
-                        yyerror("[ERROR] No se pueden declarar variables de tipo void.");
+                        yyerror("No se pueden declarar variables de tipo void.");
                         fail_decl = true;
                     }                  
                     if(fail_decl){
@@ -400,13 +407,14 @@ funciones : FUNC
                     stack_peek(&envs, &curr_env);
                     if (search(&curr_env.symbols, $3) != -1)
                     {
-                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $3);
+                        yyerror2("Ya se ha definido anteriormente el identificador", $3);
                         imprime_ci = false;
                         fail_decl = true;
                     }else{
                             add_context(true);
                             func_decl = true;
-                        }
+                    }
+                    return_type = $2;
                 }
              argumentos 
              RPAR LKEY  decl sentencias RKEY 
@@ -451,7 +459,7 @@ funciones : FUNC
                         global_symbols = curr_env.symbols;
                         func_decl = false;
                         num_params = 0;
-                        print_funtable(&global_funcs);
+                        //print_funtable(&global_funcs);
                     }
                 }
              funciones 
@@ -459,7 +467,7 @@ funciones : FUNC
             | %empty    {
                             if (!exists_main())
                               return 1;
-                            print_funtable(&global_funcs);
+                            //print_funtable(&global_funcs);
                             num_params = 0;
                         };
 
@@ -476,7 +484,7 @@ lista_args : lista_args COM tipo ID parte_arr
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $4) != -1)
                     {
-                        yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $4);
+                        yyerror2("Ya se ha definido anteriormente el identificador", $4);
                         fail_decl = true;
                     }
 
@@ -500,7 +508,7 @@ lista_args : lista_args COM tipo ID parte_arr
                         stack_peek(&envs, &curr_env);
                         if (depth_search(&curr_env.symbols, $2) != -1)
                         {
-                            yyerror2("[ERROR] Ya se ha definido anteriormente el identificador", $2);
+                            yyerror2("Ya se ha definido anteriormente el identificador", $2);
                             fail_decl = true;
                         }
                         
@@ -531,7 +539,11 @@ sentencias : sentencias sentencia
                 fprintf(producciones,"sentencias -> sentencia\n");
             };
 
-sentif: ELSE sentencia | %empty{};
+sentif: ELSE sentencia {
+                printf(ANSI_COLOR_RED "No se implementó función if else :(\n" ANSI_COLOR_RESET);
+                $$.ifelse = true;
+            }
+    | %empty {$$.ifelse = false; };
 
 sentencia :  IF LPAR condicion RPAR 
                 {
@@ -561,10 +573,6 @@ sentencia :  IF LPAR condicion RPAR
                     backpatch(&$3->falses, label2, &codigo_intermedio);
                 }
             sentif
-            {
-
-
-            }
                 
             | WHILE LPAR
                 {
@@ -579,7 +587,7 @@ sentencia :  IF LPAR condicion RPAR
                     insert_cuad(&codigo_intermedio, cuad);
                     
                     /*Guarda la etiqueta de la condición*/
-                    push_label(&lfalses, label);
+                    push_label(&lcontrol, label);
                 }
              condicion
                 {
@@ -601,7 +609,7 @@ sentencia :  IF LPAR condicion RPAR
                     c.op = GOTO;
                     strcpy(c.op1, "");
                     strcpy(c.op2, "");
-                    strcpy(c.res, pop_label(&lfalses));
+                    strcpy(c.res, pop_label(&lcontrol));
                     insert_cuad(&codigo_intermedio, c);
 
                     cuadrupla cuad;
@@ -628,12 +636,12 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(label, newLabel());
                     strcpy(cuad.res, label);
                     insert_cuad(&codigo_intermedio, cuad);
-                    push_label(&lfalses, label);
+                    push_label(&lcontrol, label);
                 }
             sentencia WHILE LPAR condicion RPAR PYC
                 {
                     char label[32], label2[32];
-                    strcpy(label, pop_label(&lfalses));
+                    strcpy(label, pop_label(&lcontrol));
                     strcpy(label2, newLabel());
                     backpatch(&$6->trues, label, &codigo_intermedio);
                     backpatch(&$6->falses, label2, &codigo_intermedio);
@@ -657,7 +665,7 @@ sentencia :  IF LPAR condicion RPAR
                     strcpy(label, newLabel());
                     strcpy(cuad.res, label);
                     insert_cuad(&codigo_intermedio, cuad);
-                    push_label(&lfalses, label);
+                    push_label(&lcontrol, label);
                 }
              condicion PYC
                 {
@@ -675,7 +683,7 @@ sentencia :  IF LPAR condicion RPAR
                     c.op = GOTO;
                     strcpy(c.op1, "");
                     strcpy(c.op2, "");
-                    strcpy(c.res, pop_label(&lfalses));
+                    strcpy(c.res, pop_label(&lcontrol));
                     insert_cuad(&codigo_intermedio, c);
 
                     cuadrupla cuad;
@@ -700,7 +708,7 @@ sentencia :  IF LPAR condicion RPAR
                     call_params = 0;
                     int compatible = max_type($1.type, $3.type);
                     if(compatible == -1) {
-                        yyerror("Error: No se puede asignar, tipos incompatibles.");
+                        yyerror("No se puede asignar, tipos incompatibles.");
                         imprime_ci = false;
                     }
                     else {
@@ -710,10 +718,33 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | RETURN expresion PYC
                 {
+                    if (return_type == 0)
+                    {
+                        yyerror(" La función no puede regresar argumentos pues es de tipo void");
+                        imprime_ci = false;
+                    }
+                    else if (return_type < 5) 
+                    {
+                        if(return_type != $2.type){
+                            yyerror("Tipo de regreso incompatible con definición de la función");
+                            imprime_ci = false;
+                        }
+                    }
+
+                    cuadrupla cuad;
+                    cuad.op = RET;
+                    strcpy(cuad.res, $2.dir);
+                    insert_cuad(&codigo_intermedio, cuad);
+
                     fprintf(producciones,"sentencia -> return expresion ;\n");
                 }
             | RETURN PYC
                 {
+                    if (return_type != 0)
+                    {
+                        yyerror(" La función debe retornar una expresión");
+                        imprime_ci = false;
+                    }
                     fprintf(producciones,"sentencia -> return ;\n");
                 }
             | LKEY sentencias RKEY
@@ -726,15 +757,15 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | SWITCH LPAR expresion RPAR
                 {
-                    push_label(&lfalses, newLabel());
-                    push_label(&lfalses, newLabel());
+                    push_label(&lcontrol, newLabel());
+                    push_label(&lcontrol, newLabel());
                     switch_call++;
 
                     cuadrupla cuad;
                     cuad.op = GOTO;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, get_top_label_previous(&lfalses));
+                    strcpy(cuad.res, get_top_label_previous(&lcontrol));
                     insert_cuad(&codigo_intermedio, cuad);
                 }
               LKEY casos predeterm RKEY
@@ -744,7 +775,7 @@ sentencia :  IF LPAR condicion RPAR
                     c.op = LB;
                     strcpy(c.op1, "");
                     strcpy(c.op2, "");
-                    strcpy(c.res, get_top_label_previous(&lfalses));
+                    strcpy(c.res, get_top_label_previous(&lcontrol));
                     insert_cuad(&codigo_intermedio, c);
 
                     while(stack_size(&switchesback) > 0)
@@ -769,10 +800,10 @@ sentencia :  IF LPAR condicion RPAR
                     cuad.op = LB;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
-                    strcpy(cuad.res, pop_label(&lfalses));
+                    strcpy(cuad.res, pop_label(&lcontrol));
                     insert_cuad(&codigo_intermedio, cuad);
 
-                    pop_label(&lfalses);
+                    pop_label(&lcontrol);
                 }
     
             | BREAK PYC 
@@ -808,7 +839,7 @@ casos : CASE PUNES NUMERO
             }
         sentencias
             {
-                char *label = get_top_label(&lfalses);
+                char *label = get_top_label(&lcontrol);
                 cuadrupla cuad;
                 cuad.op = GOTO;
                 strcpy(cuad.op1, "");
@@ -831,7 +862,7 @@ parte_izq : ID  {
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
-                        yyerror2("[ERROR] No se ha declarado la variable", $1);
+                        yyerror2("No se ha declarado la variable", $1);
                         fail_decl = true;
                     }
 
@@ -855,6 +886,27 @@ parte_izq : ID  {
                 }
             | ID DOT ID 
                 {
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if(depth_search(&curr_env.symbols, $1) == 1)
+                    {
+                        yyerror2("No se ha declarado la variable", $1);
+                        fail_decl = true;
+                    }
+
+                    if(fail_decl){
+                        fail_decl = false;
+                        imprime_ci = false;
+                    }
+                    else{
+                        int type = get_type(&curr_env.symbols, $1);
+                        if (type != 5)
+                        {
+                            yyerror("Solo puedes obtener el atributo de un struct");
+                        }
+                        $$.type = type;
+                    }
+
                     fprintf(producciones,"parte_izq -> id.id\n");
                 }
 
@@ -864,7 +916,7 @@ var_arreglo : ID LCOR expresion RCOR
                 stack_peek(&envs, &curr_env);
                 if (depth_search(&curr_env.symbols, $1) == -1)
                     {
-                        yyerror2("[ERROR] No se encontró el identificador", $1);
+                        yyerror2("No se encontró el identificador", $1);
                         fail_decl = true;
                     }
                 strcpy($$.arr,$1);
@@ -875,12 +927,12 @@ var_arreglo : ID LCOR expresion RCOR
 
                 if( $3.type != 2)
                     {
-                    yyerror("[ERROR] Para acceder a un arreglo la expresión o número debe ser un entero ");
+                    yyerror("Para acceder a un arreglo la expresión o número debe ser un entero ");
                     fail_decl = true;
                     }
                 if( curr_type == 5)
                     {
-                    yyerror("[ERROR] Acceso inválido, es tipo struct y se está intentando acceder como un arreglo ");
+                    yyerror("Acceso inválido, es tipo struct y se está intentando acceder como un arreglo ");
                     fail_decl = true;
                     }
                 if(fail_decl)
@@ -903,7 +955,7 @@ var_arreglo : ID LCOR expresion RCOR
                     if(arr_index.dir[0] != 't'){
                         if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,curr_type))
                             {
-                                yyerror("[ERROR] Fuera de rango, index inávildo.");
+                                yyerror("Fuera de rango, index inávildo.");
                                 imprime_ci = false;
                             }
                     }
@@ -927,13 +979,13 @@ var_arreglo : ID LCOR expresion RCOR
                 { 
                 if( $3.type != 2)
                     {
-                    yyerror("[ERROR] Para acceder a un arreglo la expresión o número debe ser un entero ");
+                    yyerror("Para acceder a un arreglo la expresión o número debe ser un entero ");
                     fail_decl = true;
                     }
                 env curr_env;
                 stack_peek(&envs, &curr_env);
                 if($1.type == -1){
-                    yyerror("[ERROR] Fuera de rango ");
+                    yyerror("Fuera de rango ");
                     fail_decl = true;
                 }
                 if(fail_decl)
@@ -962,7 +1014,7 @@ var_arreglo : ID LCOR expresion RCOR
                         if(arr_index.dir[0] != 't'){
                             if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,$1.type))
                                 {
-                                    yyerror("[ERROR] Fuera de rango, index inávildo.");
+                                    yyerror("Fuera de rango, index inávildo.");
                                     imprime_ci = false;
                                 }
                         }
@@ -1041,7 +1093,7 @@ expresion:   expresion MAS expresion
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
-                        yyerror2("[ERROR] No se encontró el identificador", $1);
+                        yyerror2("No se encontró el identificador", $1);
                         fail_decl = true;
                     }
                     if(fail_decl){
@@ -1056,7 +1108,7 @@ expresion:   expresion MAS expresion
                             if (rec->params != rec->counter)
                             {
                                 char *msg = (char*) malloc(sizeof(char*));
-                                sprintf(msg, "[ERROR] Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
+                                sprintf(msg, "Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, call_params);
                                 yyerror(msg);
                                 fail_decl = true;                            
                             }
@@ -1064,7 +1116,7 @@ expresion:   expresion MAS expresion
                         }
                         else if ($4)
                         {
-                            yyerror2("[ERROR] No corresponde a una función el identificador", $1);
+                            yyerror2("No corresponde a una función el identificador", $1);
                             fail_decl = true;
                         }
                         if(fail_decl){
@@ -1167,10 +1219,12 @@ condicion:  condicion OR
                 {
                     char label[32];
                     strcpy(label, newLabel());
-                    backpatch(&$1->trues, label, &codigo_intermedio);
+                    
                     $$ = (bools*) malloc(sizeof(bools));
                     $$->falses = merge(&$1->falses, &$4->falses);
                     $$->trues = $4->trues;
+                    backpatch(&$1->trues, label, &codigo_intermedio);
+                    
                     fprintf(producciones,"condicion -> condicion && condicion \n");
                 }
             | NOT condicion 
@@ -1219,12 +1273,12 @@ relacional: MAYOR { $$ = GT; fprintf(producciones,"rel-> >\n"); }
 %%
 
 void yyerror(char *s){
-    printf("%s: en la línea %d\n",s, yylineno);
+    printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "%s: en la línea %d\n",s, yylineno);
     fprintf(err,"%s: en la línea %d\n",s, yylineno);
 }
 
 void yyerror2(char *s, char *n){
-    printf("%s %s: en la línea %d\n",s, n, yylineno);
+    printf(ANSI_COLOR_RED"Error:"ANSI_COLOR_RESET " %s %s: en la línea %d\n",s, n, yylineno);    
     fprintf(err,"%s %s: en la línea %d\n",s, n, yylineno);
 }
 
@@ -1255,8 +1309,11 @@ void init()
 
 void finish()
 {
-    if(imprime_ci)
+    if(imprime_ci){
         print_code(&codigo_intermedio);
+        printf(ANSI_COLOR_GREEN "¡Código compilado!" ANSI_COLOR_RESET " Ver archivo:" ANSI_COLOR_YELLOW " codigo.ci\n" ANSI_COLOR_RESET);
+    }
+
 }
 
 void print_context(char *s1, char *s2)
@@ -1352,7 +1409,7 @@ bool exists_main()
         sym symbol = global_symbols.symbols[index];
         if (strcmp(symbol.id, "main") != 0)
         {
-            yyerror("[ERROR] No se encontró la declaración de la función main");
+            yyerror("No se encontró la declaración de la función main");
             return false;
         }
     }
@@ -1366,9 +1423,10 @@ int max_type(int t1, int t2){
     else {
         /*Si son ambos números. */
         if (t1 > 1 && t1 < 5 && 
-            t2 > 1 && t2 < 5) 
-            if (t1 < t2) return t2;
-        else return t1;  
+            t2 > 1 && t2 < 5){
+                if (t1 < t2){return t2;}
+        } 
+        else {return t1;}  
         if (t1 > 6 &&  t2 == 6)
             return -2; //Es posible que se intenta asignar una cadena a una char unidimensional
         /*Si no son números -> tipos incompatibles.
@@ -1391,7 +1449,7 @@ exp asignar(exp e1, exp e2){
         /* Verifica que exista el id. */
         if (depth_search(&curr_env.symbols, e2.arr) == -1)
         {
-            yyerror2("[ERROR] No se encontró el identificador", e2.arr);
+            yyerror2("No se encontró el identificador", e2.arr);
             imprime_ci = false;
         }
         else{
@@ -1430,21 +1488,21 @@ exp asignar(exp e1, exp e2){
                 {
                     fail_decl = true;
                     //char *msg = (char*) malloc(sizeof(char*));
-                    //sprintf(msg, "[ERROR] Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor.",len, dim);
-                    yyerror("[ERROR] Fuera de rango, se está intentando asignar una cadena con longitud a un arreglo de chars con dimension menor.");
+                    //sprintf(msg, "Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor.",len, dim);
+                    yyerror("Fuera de rango, se está intentando asignar una cadena con longitud a un arreglo de chars con dimension menor.");
                     imprime_ci = false;
                 }
             }
             else 
             {
-                yyerror("[ERROR] Solo se pueden asignar cadenas a arreglos unidimensionas de tipo char.");
+                yyerror("Solo se pueden asignar cadenas a arreglos unidimensionas de tipo char.");
                 imprime_ci = false;
             }
         }
         else{
-        cuad.op  = AS;
+            cuad.op  = AS;
             if(t1 <= t2) strcpy(&cuad.op1, reducir(e2.dir,t2,t1));
-            else strcpy(&cuad.op1,ampliar(e2.dir,t2,t1));
+            else strcpy(&cuad.op1, ampliar(e2.dir,t2,t1));
             insert_cuad(&codigo_intermedio, cuad);
             return e;
         }
@@ -1458,7 +1516,7 @@ exp* call_function(exp *e)
     char op1[32];
     funrec rec = *get_rec(&global_funcs, e->dir);        
 
-    sprintf(op1, "call %s, %d", e->dir, rec.params);
+    sprintf(op1, "call %s %d", e->dir, rec.params);
     strcpy(temp, newTemp());
 
     cuad.op = AS;
@@ -1489,11 +1547,11 @@ char *reducir(char * dir, int t, int w){
         strcpy(c.res, temp);
         insert_cuad(&codigo_intermedio, c);
         if(t == 3){ //un float
-            printf("Pérdida de información, se está asignando un float a un int.\n");
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Pérdida de información, se está asignando un float a un int: línea %d\n", yylineno);
             return temp; 
         }        
         if(t == 4){ //un double
-            printf("Pérdida de información, se está asignando un double a un int.\n");
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Pérdida de información, se está asignando un double a un int: línea %d\n", yylineno);
             return temp; 
         }          
     }
@@ -1504,7 +1562,7 @@ char *reducir(char * dir, int t, int w){
             strcpy(temp, newTemp());
             strcpy(c.res, temp);
             insert_cuad(&codigo_intermedio, c); 
-            printf("Pérdida de información, se está asignando un double a un float.\n");
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Pérdida de información, se está asignando un double a un float: línea %d\n", yylineno);
             return temp; 
         }        
     }
@@ -1553,7 +1611,7 @@ exp math_function(exp e1, exp e2, int op){
     int max = max_type(e1.type,e2.type);
     e.type = max;
     if(max==-1) 
-        yyerror("Error: Tipos incompatibles.");
+        yyerror("Tipos incompatibles");
     else{
         char *t = (char*) malloc(32 * sizeof(char));
         strcpy(t, newTemp());
@@ -1671,11 +1729,11 @@ int check_args_types(funrec *rec, exp expr)
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
         fprintf(producciones,"func %s", expr.dir);
-        print_table(rec->context->symbols);
+        //print_table(rec->context->symbols);
         if (tipo != expr.type)
         {
             char *msg = (char*) malloc(sizeof(char*));
-            sprintf(msg, "[ERROR] Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, expr.dir, expr.type, tipo);
+            sprintf(msg, "Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, expr.dir, expr.type, tipo);
             yyerror(msg);
             return -1;
         }
