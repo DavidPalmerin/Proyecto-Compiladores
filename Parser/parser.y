@@ -1,8 +1,10 @@
 %{
 /* 
- * File:   parser.y
- * Autor: Melissa y Palmi
- * Diciembre de 2018
+ * Analizador Semántico.
+ * Autores: Melissa Mendez Servín
+ *          Palmerin Morales David Gabriel.
+ *
+ * Github: https://github.com/DavidPalmerin/Proyecto-Compiladores
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -952,8 +954,7 @@ parte_izq : ID  {
                         else{
                             //Asignar dirección.
                             // La direcicón de $1 está en env.symbols (o en parent) y la del atributo está en struct_content.
-                            strcmp($$.dir,newTemp());
-                            
+                            sprintf($$.dir, "%s.%s", $1, $3);
                             $$.type = get_type(struct_content, $3);
                         } 
                     }
@@ -1136,56 +1137,48 @@ expresion:   expresion MAS expresion
                     fprintf(producciones,"expresion -> num %s\n", $1.val);
                 }
             | ID  {
-                    stack_push(&func_calls, $1);
-                    stack_peek(&func_calls, curr_function);
-                  }                   
-                LPAR parametros RPAR 
-                {   
-                    /* Verifica que exista el id. */
                     env curr_env;
                     stack_peek(&envs, &curr_env);
                     if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("No se encontró el identificador", $1);
+                        return -1;
+                    }
+
+                    if (is_function(&global_funcs, $1))
+                    {
+                        funrec rec = *get_rec(&global_funcs, $1);
+                        stack_push(&func_calls, &rec);
+                    }
+
+                    strcpy(curr_function, $1);
+                  }                   
+                LPAR parametros RPAR 
+                {   
+                    env curr_env;
+                    stack_peek(&envs, &curr_env);
+                    if (is_function(&global_funcs, $1))
+                    {   
+                        funrec rec;
+                        stack_pop(&func_calls, &rec);
+                        if (rec.params != rec.counter)
+                        {
+                            char *msg = (char*) malloc(sizeof(char*));
+                            sprintf(msg, "Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec.params, rec.id, rec.counter);
+                            yyerror(msg);
+                            fail_decl = true;                            
+                        }
+                    }
+                    else if ($4)
+                    {
+                        yyerror2("No corresponde a una función el identificador", $1);
                         fail_decl = true;
                     }
-                    if(fail_decl){
-                        fail_decl = false;
-                        imprime_ci = false;
-                        strcpy($$.dir, "SF");
-                        $$.type = -1;
-                    }
-                    else
-                    {
-                        if (is_function(&global_funcs, $1))
-                        {
-                            funrec *rec = get_rec(&global_funcs, $1);
-                            if (rec->params != rec->counter)
-                            {
-                                char *msg = (char*) malloc(sizeof(char*));
-                                sprintf(msg, "Se esperaban %d argumentos en la función %s, pero se encontraron %d", rec->params, rec->id, rec->counter);
-                                yyerror(msg);
-                                fail_decl = true;                            
-                            }
-                            rec->counter = 0;
-                        }
-                        else if ($4)
-                        {
-                            yyerror2("No corresponde a una función el identificador", $1);
-                            fail_decl = true;
-                        }
-                        if(fail_decl){
-                            fail_decl = false;
-                            imprime_ci = false;
-                        }
-                        else
-                        {
-                        stack_pop(&func_calls, &curr_function);
-                        /* Asigna tipo esperado. */
-                        strcpy($$.dir, $1);
-                        $$.type = get_type(&curr_env.symbols,$1);
-                        }
-                    }
+
+
+                    /* Asigna tipo esperado. */
+                    strcpy($$.dir, $1);
+                    $$.type = get_type(&curr_env.symbols,$1);
                     fprintf(producciones,"expresion -> id %s ( parametros )\n", $1);
                 }
             ;
@@ -1203,18 +1196,21 @@ lista_param: lista_param COM expresion
                     cuad.op = PARAM;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
+                    
                     if (is_function(&global_funcs, $3.dir) == 0)
-                    {
                         strcpy(cuad.res, $3.dir);
-                    }
                     else{
                         exp *e = call_function(&$3);
                         strcpy(cuad.res, e->dir);
                     }
 
-                    funrec *rec = get_rec(&global_funcs, curr_function);
-                    if (check_args_types(rec, $3) < 0)
+                    funrec rec;
+                    stack_pop(&func_calls, &rec);
+                    if (check_args_types(&rec, $3) < 0)
                         return -1;
+
+                    rec.counter++;
+                    stack_push(&func_calls, &rec);
 
                     insert_cuad(&codigo_intermedio, cuad);
 
@@ -1222,23 +1218,33 @@ lista_param: lista_param COM expresion
                 }
             | expresion 
                 {
+                    /* Si es una variable entonces hay error pues no debe tener parámetros.*/
+                    if(!is_function(&global_funcs, curr_function))
+                    {
+                        yyerror2("No corresponde a una función el identificador", curr_function);
+                        return -1;
+                    }
+
                     cuadrupla cuad;
                     cuad.op = PARAM;
                     strcpy(cuad.op1, "");
                     strcpy(cuad.op2, "");
                     if (is_function(&global_funcs, $1.dir) == 0)
-
                         strcpy(cuad.res, $1.dir);
                     else{
                         exp *e = call_function(&$1);
                         strcpy(cuad.res, e->dir);
                     }
                     
-                    funrec *rec = get_rec(&global_funcs, curr_function);
-                    if(check_args_types(rec, $1) < 0)
+                    funrec rec;
+                    stack_pop(&func_calls, &rec);
+                    if(check_args_types(&rec, $1) < 0)
                         return -1;
-                    insert_cuad(&codigo_intermedio, cuad);
 
+                    rec.counter++;
+                    stack_push(&func_calls, &rec);
+
+                    insert_cuad(&codigo_intermedio, cuad);
                     fprintf(producciones,"lista_param -> expresion\n");
                 };
 
@@ -1364,7 +1370,7 @@ void init()
     create_funtab(&global_funcs);
 
     stack_new(&switchesback, sizeof(switches), NULL);
-    stack_new(&func_calls, sizeof(char) * 32, NULL);
+    stack_new(&func_calls, sizeof(funrec), NULL);
     stack_new(&envs, sizeof(typetab) + sizeof(symtab) , NULL);
     symtab sym_tab;
     create_table(&sym_tab, NULL);
@@ -1895,23 +1901,22 @@ void insert_sym(char id[32], env curr_env, int tipo)
  * Autor: Palmerin Morales David Gabriel.
 */
 int check_args_types(funrec *rec, exp expr)
-{
+{   
     if (rec->counter < rec->params)
     {
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
-        fprintf(producciones,"func %s", expr.dir);
         if (tipo != expr.type)
-        {
+        {   
             char *msg = (char*) malloc(sizeof(char*));
             sprintf(msg, "Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, expr.dir, expr.type, tipo);
             yyerror(msg);
             return -1;
         }
-        rec->counter++;
+        fprintf(producciones,"func %s", expr.dir);
     }
     else
-    {
+    {   
         yyerror2("Se encontraron más argumentos de los esperados en el identificador", rec->id);
         return -1;
     }

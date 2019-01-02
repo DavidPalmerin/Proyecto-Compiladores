@@ -1,4 +1,11 @@
 %{
+	/*
+     * Análizador Léxico.
+     * Autores: Melissa Mendez Servín
+     * 			Palmerin Morales David Gabriel.
+     *
+     * Github: https://github.com/DavidPalmerin/Proyecto-Compiladores
+	*/
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <stdbool.h>

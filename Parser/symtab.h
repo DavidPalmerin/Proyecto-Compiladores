@@ -3,6 +3,8 @@
  * Author: Adrian Ulises Mercado Martínez
  *
  * Created on 3 de diciembre de 2018, 19:36
+ * Modificado el 1 de Enero de 2019
+ * Se agregan nuevas funciones y definiciones.
  */
 #include <stdio.h>
 #include "stack.h"
@@ -30,6 +32,11 @@ extern "C" {
         void *parent;
     } symtab;
 
+
+    /* Tabla para almacenar contextos de funciones.
+     * Se eligió crear una tabla aparte para facilitar su uso.
+     * Una alternativa era un apuntador en symtab a otra tabla de símbolos.
+    */
     typedef struct _funrec{
         char id[32];
         symtab *context;
@@ -47,6 +54,7 @@ extern "C" {
         int count;
     } funtab;
 
+
     int search(symtab *, char*);
     int depth_search(symtab *st, char *id);
     int insert(symtab*, sym );
@@ -57,12 +65,12 @@ extern "C" {
     int get_type(symtab*, char *);
     symtab* get_struct_content(symtab *st, char *);
 
+    /* Funciones análogas a las definidas anteirormente.*/
     void create_funtab(funtab *tab);
     int insert_fun(funtab *tab, funrec rec);
     void print_funtable(funtab* st);
     int is_function(funtab *tab, char id[32]);
     funrec* get_rec(funtab *tab, char id[32]);
-    int get_rec_counter(funtab *tab, char id[32]);
 
 
 

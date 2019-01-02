@@ -1,12 +1,14 @@
 #ifndef __LIST_H
 #define __LIST_H
+
+/*
+ * Estructura de datos: Lista
+ * Se obtiene del siguiente sitio: 
+ * https://pseudomuto.com/2013/05/implementing-a-generic-linked-list-in-c/
+*/
  
-// a common function used to free malloc'd objects
 typedef void (*freeFunction)(void *);
  
-//typedef enum { FALSE, TRUE } bool;
- 
-//typedef bool (*listIterator)(void *);
  
 typedef struct _listNode {
   void *data;
@@ -29,7 +31,6 @@ void list_append(list *list, void *element);
 void list_first(list *list, void *element);
 int list_size(list *list);
 
-//void list_for_each(list *list, listIterator iterator);
 void list_head(list *list, void *element, int removeFromList);
 void list_tail(list *list, void *element); 
 
