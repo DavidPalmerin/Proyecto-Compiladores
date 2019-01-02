@@ -1,7 +1,7 @@
 %{
 /* 
  * Analizador Semántico.
- * Autores: Melissa Mendez Servín
+ * Autores: Mendez Servin Melissa.
  *          Palmerin Morales David Gabriel.
  *
  * Github: https://github.com/DavidPalmerin/Proyecto-Compiladores
@@ -125,7 +125,7 @@ bools * gen_cond_rel(char e1[32], char e2[32], int op);
 int max_type(int t1, int t2);
 char *ampliar(char *dir, int t1, int t2);
 char *reducir(char *dir, int t1, int t2);
-
+char * get_type_gen(int t);
 
 /* Funciones para generar temporales, etiquetas e indices */
 char *newTemp();
@@ -651,6 +651,8 @@ sentencia :  IF LPAR condicion RPAR
                     char label[32];
                     strcpy(label, newLabel());
                     backpatch(&$4->falses, label, &codigo_intermedio);
+                    
+                    fprintf(producciones,"sentencia -> while ( condicion) sentencia;\n"); 
                 }
             | DO 
                 {
@@ -742,7 +744,7 @@ sentencia :  IF LPAR condicion RPAR
                         }
                         else {
                             asignar($1,$3);
-                            fprintf(producciones,"sentencia -> parte_izq = expresion\n");
+                            fprintf(producciones,"sentencia -> parte_izq = expresion ;\n");
                         }
                     }
                 }
@@ -755,8 +757,10 @@ sentencia :  IF LPAR condicion RPAR
                     }
                     else if (return_type < 5) 
                     {
-                        if(return_type != $2.type){
-                            yyerror("Tipo de regreso incompatible con definición de la función");
+                        int compatibles = max_type(return_type, $2.type);
+                        if(compatibles == -1){
+                            printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "Tipo de regreso incompatible con definición de la función, se está devolviendo un %s pero se espera un %s\n : en la línea %d\n",get_type_gen(return_type), get_type_gen($2.type), yylineno);
+                            fprintf(err,"Error: Tipo de regreso incompatible con definición de la función, se está devolviendo un %s pero se espera un %s\n : en la línea %d\n",get_type_gen(return_type), get_type_gen($2.type), yylineno);
                             imprime_ci = false;
                         }
                     }
@@ -834,6 +838,7 @@ sentencia :  IF LPAR condicion RPAR
                     insert_cuad(&codigo_intermedio, cuad);
 
                     pop_label(&lcontrol);
+                    fprintf(producciones,"sentencia -> switch ( expresion ) { casos predeterm} ;\n");
                 }
     
             | BREAK PYC 
@@ -901,6 +906,7 @@ parte_izq : ID  {
                         imprime_ci = false;
                     }
                     else{
+
                         strcpy($$.dir, $1);
                         $$.type = get_type(&curr_env.symbols, $1);
                     }
@@ -977,7 +983,6 @@ var_arreglo : ID LCOR expresion RCOR
                 sprintf(base_dir.dir,"%d",get_dir(&curr_env.symbols,$1));
                 base_dir.type = 2;
                 int curr_type = get_type(&curr_env.symbols,$1);
-
                 if( $3.type != 2)
                     {
                     yyerror("Para acceder a un arreglo la expresión o número debe ser un entero ");
@@ -1008,12 +1013,12 @@ var_arreglo : ID LCOR expresion RCOR
                     if(arr_index.dir[0] != 't'){
                         if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,curr_type))
                             {
-                                yyerror("Fuera de rango, index inávildo.");
+                                char * dim_f = (char*) malloc(32*sizeof(char));
+                                sprintf(dim_f,"%d",get_dim(&curr_env.types,curr_type)-1);
+                                yyerror2("Fuera de rango, index inávildo, se espera un número entre 0 y el ",dim_f);
                                 imprime_ci = false;
                             }
-                    }
-                    else
-                    {                 
+                    }         
                     exp tam_act;
                     tam_act.type = 2;
                     sprintf(tam_act.dir, "%d",get_tam(&curr_env.types,base_type));
@@ -1022,7 +1027,6 @@ var_arreglo : ID LCOR expresion RCOR
 
                     strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
                     //printf("->> Dir act: %s\n",$$.dir);
-                    }
                     fprintf(producciones,"var_arreglo -> id [ expresion ] \n");
                     
 
@@ -1067,12 +1071,12 @@ var_arreglo : ID LCOR expresion RCOR
                         if(arr_index.dir[0] != 't'){
                             if(atoi(arr_index.dir) < 0 || atoi(arr_index.dir) >=  get_dim(&curr_env.types,$1.type))
                                 {
-                                    yyerror("Fuera de rango, index inávildo.");
+                                    char * dim_f = (char*) malloc(32*sizeof(char));
+                                    sprintf(dim_f,"%d",get_dim(&curr_env.types,$1.type)-1);
+                                    yyerror2("Fuera de rango, index inávildo, se espera un número entre el 0 y el",dim_f);
                                     imprime_ci = false;
                                 }
                         }
-                        else
-                        {  
                         exp tam_act;
                         tam_act.type = 2;
                         sprintf(tam_act.dir,"%d", get_tam(&curr_env.types,base_type));
@@ -1080,7 +1084,8 @@ var_arreglo : ID LCOR expresion RCOR
                         exp curr_dir = math_function(arr_index,tam_act,ML);
 
                         strcpy($$.dir,math_function(base_dir,curr_dir,MA).dir);
-                        }
+                        //printf("->> Dir act: %s\n",$$.dir);
+
                         fprintf(producciones,"var_arreglo -> var arreglo [ expresion ]\n");
                     }
                 };
@@ -1128,7 +1133,6 @@ expresion:   expresion MAS expresion
                     $$.type = 6;
                     $$.cadena = (char*) malloc(sizeof(char*));
                     strcpy($$.cadena,$1);
-
                     fprintf(producciones,"expresion -> cadena %s\n", $1);
                 }
             | NUMERO 
@@ -1337,7 +1341,7 @@ relacional: MAYOR { $$ = GT; fprintf(producciones,"rel-> >\n"); }
  * Función para imprimir un error con el mensaje deseado.
  * Se usan colores para hacer los comentarios amigables al usuario.
  *
- * Autor: Melissa Mendez Servín
+ * Autor: Mendez Servin Melissa.
  *        Palmerin Morales David Gabriel.
 */
 void yyerror(char *s){
@@ -1349,7 +1353,7 @@ void yyerror(char *s){
  * Función para imprimir un error concatenando los dos mensajes recibidos.
  * El mensaje s será primero que el mensaje n.
  * 
- * Autor: Melissa Mendez Servín
+ * Autor: Mendez Servin Melissa.
  *        Palmerin Morales David Gabriel.
  */
 void yyerror2(char *s, char *n){
@@ -1360,7 +1364,7 @@ void yyerror2(char *s, char *n){
 /* Inicializa las variables necesarias para el análisis, tales como 
  * pilas, tablas globales, etc.
  * 
- * Autores: Melissa Mendez Servín 
+ * Autores: Mendez Servin Melissa. 
  *          Palmerin Morales David Gabriel.
  */
 void init()
@@ -1392,7 +1396,7 @@ void init()
  * Se encarga de determinar si se debe de imprimir el código intermedio
  * esto sucede si no ocurrió ningún error en el programa de entrada.
  *
- * Autores: Melissa Mendez Servín 
+ * Autores: Mendez Servin Melissa. 
  *.         Palmerin Morales David Gabriel.
  */
 void finish()
@@ -1549,7 +1553,14 @@ bool exists_main()
     return true;
 }
 
-
+/*
+ * Devuelve el tipo de mayor dimensión, funciona también
+ * para determinar la compatibilidad entre tipos, es decir,
+ * si son numeros ambos o bien se trata de una cadena y un
+ * arreglo de chars, en otro caso devuelve -1.
+ *
+ * Autora : Mendez Servin Melissa.
+ */
 int max_type(int t1, int t2){
     //printf("TIPO 1: %d, TIPO 2: %d\n",t1,t2);
     if (t1 == t2) return t1;
@@ -1557,47 +1568,44 @@ int max_type(int t1, int t2){
         /*Si son ambos números. */
         if (t1 > 1 && t1 < 5 && 
             t2 > 1 && t2 < 5){
-                if (t1 < t2){return t2;}
+                if (t1 < t2){return t2;} 
+                else {return t1;} 
         } 
-        else {return t1;}  
         if (t1 > 6 &&  t2 == 6)
-            return -2; //Es posible que se intenta asignar una cadena a una char unidimensional
+            return t1; //Es posible que se intenta asignar una cadena a una char unidimensional
         /*Si no son números -> tipos incompatibles.
          Por ahora no se pude hacer int a char*/    
         return -1;
     } 
 }
 
-/* Asina a e1 el valor de la dirección de e2*/
+/* Asina a la expresión e1 el valor de la dirección de 
+ * de la expresión e2, generando el código intermedio 
+ * y expresión correspondiente.
+ *
+ * Autora : Mendez Servin Melissa. 
+ */
 exp asignar(exp e1, exp e2){
     exp e;
-
     if (is_function(&global_funcs, e2.dir) == 1)
         call_function(&e2);
     cuadrupla cuad;
     env curr_env;
     stack_peek(&envs, &curr_env);
-    /* Si se está pidiendo asignar un arreglo, i.e, e2.arr == ID*/
-    if(strlen(e2.arr) > 0) {
-        /* Verifica que exista el id. */
-        if (depth_search(&curr_env.symbols, e2.arr) == -1)
-        {
-            yyerror2("No se encontró el identificador", e2.arr);
-            imprime_ci = false;
-
-        }
-        else{
-            cuad.op = AS_ARR;
-            char *temp = (char*) malloc(32*sizeof(char));
-            strcpy(temp, newTemp());
-            strcpy(&cuad.res, temp);  // T =
-            strcpy(&cuad.op1,e1.dir); //     ID
-            strcpy(&cuad.op2,e2.dir); //         [VAL]
-            insert_cuad(&codigo_intermedio, cuad);
-            strcpy(e.dir,temp);
-            e.type = e2.type;
-            return e;
-        }
+    /* Si se está pidiendo asignar un arreglo, i.e, e2.arr == ID
+       Verifica que exista el id. */
+    if (depth_search(&curr_env.symbols, e2.arr) != -1)
+    {
+        cuad.op = AS_ARR;
+        char *temp = (char*) malloc(32*sizeof(char));
+        strcpy(temp, newTemp());
+        strcpy(&cuad.res, temp);  // T =
+        strcpy(&cuad.op1,e1.dir); //     ID
+        strcpy(&cuad.op2,e2.dir); //         [VAL]
+        insert_cuad(&codigo_intermedio, cuad);
+        strcpy(e.dir,temp);
+        e.type = e2.type;
+        return e;
     }
     else
     {
@@ -1608,7 +1616,8 @@ exp asignar(exp e1, exp e2){
         e.type = t1;
         if(t1 > 6 && t2 == 6){
             int base = get_base(&curr_env.types, t1);
-            if(base == 1){ //Se va a asignar una cadena a un arreglo de chars unidimensional
+            //Se va a asignar una cadena a un arreglo de chars unidimensional
+            if(base == 1){    
                 int dim = get_dim(&curr_env.types,t1);
                 int len = strlen(e2.cadena);
                 if(len <= dim +2){
@@ -1621,9 +1630,8 @@ exp asignar(exp e1, exp e2){
                 else 
                 {
                     fail_decl = true;
-                    //char *msg = (char*) malloc(sizeof(char*));
-                    //sprintf(msg, "Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor.",len, dim);
-                    yyerror("Fuera de rango, se está intentando asignar una cadena con longitud a un arreglo de chars con dimension menor.");
+                    printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor : línea %d\n", len, dim, yylineno);
+                    fprintf(err,"Error: Fuera de rango, se está intentando asignar una cadena con longitud %d a un arreglo de chars con dimension %d menor : línea %d\n", len, dim, yylineno);
                     imprime_ci = false;
                 }
             }
@@ -1681,8 +1689,14 @@ exp* call_function(exp *e)
     return e;
 }
 
-/* Ampliar el numero de la expresion con dirección dir,
-    de tipo t al tipo w (menor).(int a = 2.0 (int))*/
+/* Reduce el tipo de de un número, donde dir es la dirección 
+ * del numero a reducir de tipo t, y  w ( el tipo menor) al 
+ * que se va a reducir. Devuelve la dirección de la variable
+ * resultante.
+ * (int a = (int) 2.0)
+ *
+ * Autora: Mendez Servin Melissa.
+ */
 char *reducir(char * dir, int t, int w){
     // Si son del mismo tipo, no es necesario hacer la reducción
     char *temp = (char*) malloc(32*sizeof(char));
@@ -1721,8 +1735,14 @@ char *reducir(char * dir, int t, int w){
     return "SF";
 }
 
-/* Ampliar el numero de la expresion con dirección dir,
-    de tipo t al tipo w (más grande).*/
+/* Amplia el tipo de de un número, donde dir es la dirección 
+ * del numero a ampliar de tipo t, y  w ( el tipo mayor) al 
+ * que se va a reducir.Devuelve la dirección de la variable
+ * resultante.
+ * (double a = (double) 2)
+ *
+ * Autora: Mendez Servin Melissa.
+ */
 char *ampliar(char *dir, int t, int w){
     char *temp = (char*) malloc(32*sizeof(char));
     if( t==w){
@@ -1748,16 +1768,19 @@ char *ampliar(char *dir, int t, int w){
         strcpy(c.res, temp);
         insert_cuad(&codigo_intermedio, c);
         if (t == 2)
-            printf("Cast de int a double.\n");
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Cast de int a double: línea %d\n", yylineno);
         if (t == 3)
-            printf("Cast de float a double.\n");
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Cast de float a double: línea %d\n", yylineno);
         return temp;
     }        
     return "SF";
 }
 
-/* Te devuelve la expresión correspondiente a la operación
-    dada y lo traduce a código intermedio. */
+/* Devuelve la expresión correspondiente a la operación
+ * dada y lo traduce a código intermedio. 
+ * 
+ * Autora : Mendez Servin Melissa.
+ */
 exp math_function(exp e1, exp e2, int op){
     exp e;
     int max = max_type(e1.type,e2.type);
@@ -1804,6 +1827,7 @@ void gen_cond_goto(char dir[32])
  * con alguna etiqueta.
  *
  * Autor: Adrian Ulises Mercado Martínez
+ *        Melissa Mendez Sevin
 */
 bools * gen_cond_rel(char e1[32], char e2[32], int op)
 {
@@ -1848,7 +1872,7 @@ bools * gen_cond_rel(char e1[32], char e2[32], int op)
  * Verifica las dimensiones y calcula la nueva direccion para
  * tal tabla de símbolos.
  *
- * Autores: Melissa Mendez Servín
+ * Autores: Mendez Servin Melissa.
  *          Palmerin Morales David Gabriel.
 */
 void insert_sym(char id[32], env curr_env, int tipo)
@@ -1898,20 +1922,26 @@ void insert_sym(char id[32], env curr_env, int tipo)
  * coincidan con el tipo especificado en su definición.
  * En caso de no coincidir, entonces se considera como error y se avisa al programador.
  *
- * Autor: Palmerin Morales David Gabriel.
-*/
+ * Autor: Palmerin Morales David Gabriel
+ *        Mendez Servin Melissa.
+ */
 int check_args_types(funrec *rec, exp expr)
 {   
     if (rec->counter < rec->params)
     {
         int i = rec->counter;
         int tipo = rec->context->symbols[i].type;
-        if (tipo != expr.type)
+        int compatible = max_type(tipo, expr.type);
+        if (compatible == -1)
         {   
-            char *msg = (char*) malloc(sizeof(char*));
-            sprintf(msg, "Argumentos no compatibles en la función %s: %s es de tipo %d y se esperaba de tipo %d", curr_function, expr.dir, expr.type, tipo);
-            yyerror(msg);
+            printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "Argumentos no compatibles la función ");
+            printf("%s: %s es de tipo %s y se espera de tipo %s : en la línea %d\n", curr_function, expr.dir, get_type_gen(expr.type), get_type_gen(tipo), yylineno);
+            fprintf(err,"Error: Argumentos no compatibles la función %s: %s es de tipo %s y se espera de tipo %s : en la línea %d\n",curr_function, expr.dir, get_type_gen(expr.type), get_type_gen(tipo), yylineno);
             return -1;
+        }
+        if (tipo != expr.type){
+            printf(ANSI_COLOR_CYAN "Warning: " ANSI_COLOR_RESET "Puede haber pérdida de información, el arguemnto es ");
+            printf("tipo %s y se dio un %s en la función %s : en la línea %d\n", get_type_gen(tipo), get_type_gen(expr.type), curr_function, yylineno);
         }
         fprintf(producciones,"func %s", expr.dir);
     }
@@ -1921,4 +1951,20 @@ int check_args_types(funrec *rec, exp expr)
         return -1;
     }
     return 0;
+}
+/*
+ * Devuelve el nombre del tipo correspodiente al número dado.
+ * 
+ * Autora: Mendez Servin Melissa.
+ */
+char * get_type_gen(int t){
+    char *tipo = (char*) malloc(32*sizeof(char));
+    switch(t){
+        case 0 : return "(void)"; break;
+        case 1 : return "(char)"; break;
+        case 2 : return "(int)"; break;
+        case 3 : return "(float)"; break;
+        case 4 : return "(double)"; break;
+        case 5 : return "(struct)"; break;
+    }
 }

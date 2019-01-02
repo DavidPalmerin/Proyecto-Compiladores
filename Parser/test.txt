@@ -1,28 +1,38 @@
 double a,b,c;
 double x;
-func int suma_args()
+func double suma_args()
 {
-	return a() + b() + c();
+	print a() + b() + c();
+	return a();
 }
 
 func int iterar_while(int n)
 {
 	int i;
-	int suma;
+	double suma;
 	while (i() < n())
 	{
- 		suma = suma() + a() + b() + c();
-		i = i() + 1;
+ 		suma =   a() + b() + c();
+		suma = i() + 1;
+		print 1;
 	}
 	return suma();
 }
 
-int main()
+//int main()
+func int main()
 {
-	int suma_while();
+	//int suma_while();
+	double suma_while;
+	char cadenita[6];
+	int array[7][8][2];
+	cadenita = "holi";
 	a = 2;
 	b = 3;
 	c = 4;
 	suma_while =  iterar_while(suma_args());
-	print a()
+	array[0][1][2] = 1;
+	array[0][2][1] = array[6][5][0];
+	//print a()
+	print a();
 }

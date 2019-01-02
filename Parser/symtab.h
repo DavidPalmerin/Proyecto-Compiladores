@@ -36,7 +36,9 @@ extern "C" {
     /* Tabla para almacenar contextos de funciones.
      * Se eligió crear una tabla aparte para facilitar su uso.
      * Una alternativa era un apuntador en symtab a otra tabla de símbolos.
-    */
+     *
+     * Autor: Palmerin Morales David Gabriel.
+     */
     typedef struct _funrec{
         char id[32];
         symtab *context;

@@ -30,6 +30,9 @@ extern FILE *contexts;
 extern FILE *err;
 extern FILE *producciones;
 
+//Colores 
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RED     "\x1b[31m"
 
 int main(int argc, char **argv) {
   if(argc < 2)	
@@ -53,9 +56,9 @@ int main(int argc, char **argv) {
   int p = yyparse();
   
   if(p)
-    printf("La entrada es rechazada de acuerdo a la gramática.\n");
+    printf(ANSI_COLOR_RED  "La entrada es rechazada de acuerdo a la gramática.\n" );
   else
-    printf("La entrada es aceptada de acuerdo a la gramática.\n");
+    printf(ANSI_COLOR_GREEN "La entrada es aceptada de acuerdo a la gramática.\n" );
 
   fclose(f);
   fclose(tokens_output);  
@@ -64,18 +67,5 @@ int main(int argc, char **argv) {
   fclose(comentarios);
   fclose(contexts);
   fclose(err);
-  FILE * errores = fopen("errores.txt","r");
-  char read;
-  read = getc(errores);
-  if(errores && read !=  EOF){
-    printf("\n -----------\t  [Errores]  \t-----------\n\n");
-    while(read != EOF)
-    {
-        putchar(read);
-        read = getc(errores);
-    }
-    printf("\n -----------\t[Fin errores]\t-----------\n\n\n");
-    fclose(errores);
-  }
   return 0;
 }
