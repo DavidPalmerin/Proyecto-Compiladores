@@ -31,7 +31,7 @@ func int main()
 	b = 3;
 	c = 4;
 	suma_while =  iterar_while(suma_args());
-	array[0][1][2] = 1;
+	array[0][1][1] = 1;
 	array[0][2][1] = array[6][5][0];
 	//print a()
 	print a();
