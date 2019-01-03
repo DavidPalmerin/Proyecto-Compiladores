@@ -1,3 +1,6 @@
+# Makefile
+# Autores: Mendez Servin Melissa & Palmerin Morales David Gabriel.
+# Proyecto final compiladores.
 .PHONY : instructions clean ejec ejec show_ci show_contexts show_producciones show_err show_errlex show_tokens show_comm
 instructions:
 	@echo "make ejec"
