@@ -28,7 +28,6 @@ func int iterar_while(int n)
 	return suma();
 }
 
-//int main()
 func int main()
 {
 	//int suma_while();

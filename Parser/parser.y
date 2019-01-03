@@ -483,10 +483,13 @@ funciones : FUNC
                         reg.counter = 0;
                         insert_fun(&global_funcs, reg);
 
-                        int func_tam = dir;
+                        int ret_val = $2 == 0 ? 1 : get_tam(&global_types, $2);
+                        int func_tam = dir + ret_val;
+                        dir = func_tam;
+                        printf("DIR before: %d\n", func_tam);
                         del_context(false);
-                        
-                        env curr_env;
+                        dir -= func_tam;
+                        env curr_env;                        
                         stack_pop(&envs, &curr_env);
 
                         /* Agregamos el nombre de la función al contexto donde se puede llamar. */

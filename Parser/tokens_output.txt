@@ -1,0 +1,319 @@
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: a
+Encontré un COM ,
+Encontré un id: b
+Encontré un COM ,
+Encontré un id: c
+Encontré un PYC ;
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: x
+Encontré un PYC ;
+Encontré un STRUCT struct
+Encontré un espacio
+Encontré un LKEY {
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: red
+Encontré un PYC ;
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: green
+Encontré un PYC ;
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: blue
+Encontré un PYC ;
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: cyan
+Encontré un PYC ;
+Encontré un RKEY }
+Encontré un espacio
+Encontré un id: pixel1
+Encontré un COM ,
+Encontré un espacio
+Encontré un id: pixel2
+Encontré un COM ,
+Encontré un espacio
+Encontré un id: pixel3
+Encontré un PYC ;
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: shadow
+Encontré un PYC ;
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: light
+Encontré un PYC ;
+Encontré un FUNC func
+Encontré un espacio
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: suma_args
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un LKEY {
+Encontré un espacio
+Encontré un RETURN return
+Encontré un espacio
+Encontré un id: a
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un PYC ;
+Encontré un RKEY }
+Encontré un FUNC func
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: iterar_while
+Encontré un LPAR (
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: n
+Encontré un RPAR )
+Encontré un LKEY {
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: i
+Encontré un PYC ;
+Encontré un espacio
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: suma
+Encontré un PYC ;
+Encontré un espacio
+Encontré un WHILE while
+Encontré un espacio
+Encontré un LPAR (
+Encontré un id: i
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un espacio
+Encontré un MENOR <
+Encontré un espacio
+Encontré un id: n
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un RPAR )
+Encontré un espacio
+Encontré un LKEY {
+Encontré un espacio
+Encontré un espacio
+Encontré un espacio
+Encontré un id: suma
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un espacio
+Encontré un espacio
+Encontré un id: a
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un espacio
+Encontré un MAS +
+Encontré un espacio
+Encontré un id: b
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un espacio
+Encontré un MAS +
+Encontré un espacio
+Encontré un id: c
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un PYC ;
+Encontré un espacio
+Encontré un espacio
+Encontré un id: suma
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un id: i
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un espacio
+Encontré un MAS +
+Encontré un espacio
+Encontré un int: 1
+Encontré un PYC ;
+Encontré un espacio
+Encontré un espacio
+Encontré un print print
+Encontré un espacio
+Encontré un int: 1
+Encontré un PYC ;
+Encontré un espacio
+Encontré un RKEY }
+Encontré un espacio
+Encontré un RETURN return
+Encontré un espacio
+Encontré un id: suma
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un PYC ;
+Encontré un RKEY }
+Encontré un FUNC func
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: next
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un LKEY {
+Encontré un espacio
+Encontré un espacio
+Encontré un DOUBLE double
+Encontré un espacio
+Encontré un id: suma_while
+Encontré un PYC ;
+Encontré un espacio
+Encontré un CHAR char
+Encontré un espacio
+Encontré un id: cadenita
+Encontré un LCOR [
+Encontré un int: 6
+Encontré un RCOR ]
+Encontré un PYC ;
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: array
+Encontré un LCOR [
+Encontré un int: 7
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 8
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 2
+Encontré un RCOR ]
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: pixel1
+Encontré un DOT .
+Encontré un id: red
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un int: 255
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: a
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un int: 2
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: b
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un int: 3
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: c
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un int: 4
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: suma_while
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un espacio
+Encontré un id: iterar_while
+Encontré un LPAR (
+Encontré un id: suma_args
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un RPAR )
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: array
+Encontré un LCOR [
+Encontré un int: 0
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 1
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 1
+Encontré un RCOR ]
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un int: 1
+Encontré un PYC ;
+Encontré un espacio
+Encontré un id: array
+Encontré un LCOR [
+Encontré un int: 0
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 2
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 1
+Encontré un RCOR ]
+Encontré un espacio
+Encontré un ASIG =
+Encontré un espacio
+Encontré un id: array
+Encontré un LCOR [
+Encontré un int: 6
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 5
+Encontré un RCOR ]
+Encontré un LCOR [
+Encontré un int: 0
+Encontré un RCOR ]
+Encontré un PYC ;
+Encontré un espacio
+Encontré un espacio
+Encontré un print print
+Encontré un espacio
+Encontré un id: a
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un PYC ;
+Encontré un RKEY }
+Encontré un FUNC func
+Encontré un espacio
+Encontré un VOID void
+Encontré un espacio
+Encontré un id: foo
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un LKEY {
+Encontré un espacio
+Encontré un RETURN return
+Encontré un PYC ;
+Encontré un RKEY }
+Encontré un FUNC func
+Encontré un espacio
+Encontré un VOID void
+Encontré un espacio
+Encontré un id: main
+Encontré un LPAR (
+Encontré un RPAR )
+Encontré un LKEY {
+Encontré un espacio
+Encontré un tipo int int
+Encontré un espacio
+Encontré un id: rlk
+Encontré un PYC ;
+Encontré un espacio
+Encontré un RETURN return
+Encontré un PYC ;
+Encontré un RKEY }
