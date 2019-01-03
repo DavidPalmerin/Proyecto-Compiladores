@@ -3,8 +3,12 @@
 # Proyecto final compiladores.
 .PHONY : instructions clean ejec ejec show_ci show_contexts show_producciones show_err show_errlex show_tokens show_comm
 instructions:
+	@echo "make ejec_c"
+	@echo "		Ejecuta el compilador ya compilado con un archivo "
+	@echo "     de prueba."
 	@echo "make ejec"
-	@echo "		Ejecuta el compilador con un archivo de prueba."	
+	@echo "		Compila y ejecuta el compilador con un archivo"
+	@echo "     de prueba."	
 	@echo "make run"
 	@echo "		Compila el compilador. Seguido es neceserario"
 	@echo "		Ejecutar ./gram test.txt, donde test será su "
@@ -33,6 +37,8 @@ instructions:
 	@echo "make show_tokens"
 	@echo "		Muestra en consola los tokens del código dado" 
 	@echo "		(en el caso de existir)."	
+ejec_c:	
+	@./cpm test.txt
 ejec :	
 	@flex lexer.flex 
 	@bison -d parser.y
