@@ -98,12 +98,10 @@ void finish();
 void add_context(bool func_context);
 void del_context(bool context);
 bool exists_main();
-void print_context(char *s1, char *s2);
+void print_context(symtab *st, char *s1, char *s2);
 exp* call_function(exp *e);
 void insert_sym(char id[32], env curr_env, int tipo);
 int check_args_types(funrec *rec, exp expr);
-
-
 
 /* Pila de tablas de símbolos para cada contexto. */
 stack envs;
@@ -204,7 +202,7 @@ programa:       { init(); }
 
                 }
             funciones   {
-                            print_context("Contexto global", "");
+                            print_context(NULL, "Contexto global", "");
                             fprintf(producciones,"programa -> decl funciones\n");
                             finish();
                         };
@@ -284,6 +282,7 @@ lista :     lista
                             symbol.struct_content = syms;
                             symbol.dir = dir;
                             dir += struct_dim;
+                            print_context(syms, "Contexto local de", $3);
                         }
                         else{
                             symbol.dir = dir;
@@ -361,6 +360,7 @@ lista :     lista
                             struct_dim = last_dir;
                             del_context(false);
                             symbol.dir = top_dir;
+                            print_context(syms, "Contexto local de", $1);
                         }
                         else {
                             symbol.dir = dir;
@@ -468,7 +468,7 @@ funciones : FUNC
                     }
                     else 
                     {
-                        print_context("Contexto local de: ", $3);
+                        print_context(NULL, "Contexto local de: ", $3);
 
                         /* Elimina el contexto de la función del tope de la pila y guarda el registro
                            de la función */
@@ -1454,13 +1454,18 @@ void finish()
  * La tabla de símbolos se encuentra en el ambiente del tope de la pila envs.
  * Autor: Palmerín Morales David Gabriel.
  */
-void print_context(char *s1, char *s2)
+void print_context(symtab *st, char *s1, char *s2)
 {
-    env curr_env;
-    stack_peek(&envs, &curr_env);
     fprintf(contexts, "~ %s %s\n", s1, s2);
-    fprint_table(&curr_env.symbols, contexts);
-    fprint_table_types(&curr_env.types,contexts);
+    
+    if (st == NULL){
+        env curr_env;
+        stack_peek(&envs, &curr_env);
+        fprint_table(&curr_env.symbols, contexts);
+        fprint_table_types(&curr_env.types,contexts);
+    }
+    else fprint_table(st, contexts);
+
     fprintf(contexts, "\n");
 }
 
