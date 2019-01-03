@@ -3,15 +3,26 @@
  * Author: Adrian Ulises Mercado Martínez
  *
  * Created on 3 de diciembre de 2018, 20:19
+ * Se reliza modificación:
+ * Imprime en un archivo print_code, en lugar d eimprimir en consola.
  */
 #include "intermediate_code.h"
 #include <stdio.h>
 
+/*
+ * Inicializa la estructura para codigo intermedio.
+*/
 void create_code(ic* code){
     code->count= 0;
 }
 
-
+/*
+ * Inserta una cuadrupla al código intermedio.
+ * Recibe el código intermedio donde se agregará.
+ * Recibe la cuadrupla a agregar.
+ * Regresa -1 si no es posible asignarle espacio.
+ * En otro caso, regresa el índice donde se almacenó.
+*/
 int insert_cuad(ic* code, cuadrupla c){
     if(code->count<MAX_CODE){
         code->c[code->count++] = c;
@@ -20,7 +31,9 @@ int insert_cuad(ic* code, cuadrupla c){
     return -1;
 }
 
-
+/*
+ * Imprime una representación del código intermedio en el archivo codigo.ci
+*/
 void print_code(ic* code){
     FILE * CODIGO;
     CODIGO = fopen("codigo.ci", "w");
@@ -100,6 +113,14 @@ void print_code(ic* code){
                 break;
             case AS_ARR:
                 fprintf(CODIGO, "\t %s = %s [ %s ] \n",  temporal.res, temporal.op1,temporal.op2);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
+                break;
+            case ASS:
+                fprintf(CODIGO, "\t %s = %s\n",  temporal.res, temporal.string_op);
+                //printf("%s = %s %s\n", temporal.res, temporal.op1);
+                break;
+            case RET:
+                fprintf(CODIGO, "\t return %s\n",  temporal.res);
                 //printf("%s = %s %s\n", temporal.res, temporal.op1);
                 break;
         }      

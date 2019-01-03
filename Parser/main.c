@@ -28,7 +28,11 @@ extern FILE *errores_lexicos;
 extern FILE *comentarios;
 extern FILE *contexts;
 extern FILE *err;
+extern FILE *producciones;
 
+//Colores 
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RED     "\x1b[31m"
 
 int main(int argc, char **argv) {
   if(argc < 2)	
@@ -42,6 +46,7 @@ int main(int argc, char **argv) {
   err = fopen("errores.txt", "w");
   contexts = fopen("contexts.txt", "w");
   comentarios = fopen("comentarios.txt", "w");
+  producciones = fopen("producciones.txt", "w");
   tokens_output = fopen("tokens_output.txt", "w");
   errores_lexicos = fopen("errores_lexicos.txt", "w");
 
@@ -51,16 +56,16 @@ int main(int argc, char **argv) {
   int p = yyparse();
   
   if(p)
-    printf("La entrada es rechazada de acuerdo a la gramática.\n");
+    printf(ANSI_COLOR_RED  "La entrada es rechazada de acuerdo a la gramática.\n" );
   else
-    printf("La entrada es aceptada de acuerdo a la gramática.\n");
+    printf(ANSI_COLOR_GREEN "La entrada es aceptada de acuerdo a la gramática.\n" );
 
   fclose(f);
   fclose(tokens_output);  
   fclose(errores_lexicos);
+  fclose(producciones);
   fclose(comentarios);
   fclose(contexts);
   fclose(err);
-
   return 0;
 }

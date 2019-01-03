@@ -4,6 +4,13 @@
 #include <stdio.h> 
 #include "list.h"
  
+
+/*
+ * Inicializa una nueva lista.
+ * Recibe el apuntador a la lista para crearle memoria.
+ * Recibe elementSize que es el tamaño de los elementos que almacena.
+ * Recibe freeFn una función para liberar memoria.
+*/
 void list_new(list *list, int elementSize, freeFunction freeFn)
 {
   assert(elementSize > 0);
@@ -12,7 +19,12 @@ void list_new(list *list, int elementSize, freeFunction freeFn)
   list->head = list->tail = NULL;
   list->freeFn = freeFn;
 }
- 
+
+/*
+ * Función para eliminar una lista.
+ * Recibe el apuntador de la lista que eliminaremos.
+ * Usa la función freeFn.
+*/ 
 void list_destroy(list *list)
 {
   listNode *current;
@@ -29,6 +41,11 @@ void list_destroy(list *list)
   }
 }
  
+/*
+ * Función que agrega un elemento al inicio de la lista.
+ * Recibe el apuntador a la lista.
+ * Recibe el elemento a agregar.
+*/
 void list_prepend(list *list, void *element)
 {
   listNode *node = malloc(sizeof(listNode));
@@ -46,6 +63,11 @@ void list_prepend(list *list, void *element)
   list->logicalLength++;
 }
  
+/*
+ * Función que agrega un nuevo elemento a la lista hasta el final.
+ * Recibe un apuntador a la lista
+ * Recibe el elemento que queremos agregar.
+*/
 void list_append(list *list, void *element)
 {
   listNode *node = malloc(sizeof(listNode));
@@ -64,24 +86,23 @@ void list_append(list *list, void *element)
   list->logicalLength++;
 }
 
-/*
-void list_for_each(list *list, listIterator iterator)
-{
-  assert(iterator != NULL);
- 
-  listNode *node = list->head;
-  bool result = TRUE;
-  while(node != NULL && result) {
-    result = iterator(node->data);
-    node = node->next;
-  }
-}*/
-
+/* Obtiene el primer elemento de la lista
+ * Recibe el apuntador a la lista.
+ * Recibe un elemento donde se guardara el apuntador a la cabeza.
+*/
 void list_first(list *list, void *element)
 {
   element = list->head;
 }
- 
+
+/*
+ * Obtiene y elimina el primer elemento de la lista.
+ * Recibe el apuntador a la lista.
+ * Recibe el elemento donde se guardará la cabeza.
+ * Recibe un entero para indicar si se elimina el elemento.
+ * 1 Indica eliminar el elemento.
+ * Cualquier otro numero no lo eliminará.
+*/
 void list_head(list *list, void *element, int removeFromList)
 {
   assert(list->head != NULL);
@@ -97,7 +118,12 @@ void list_head(list *list, void *element, int removeFromList)
     free(node);
   }
 }
- 
+
+/*
+ * Otiene una copiia del último elemento de la lista.
+ * Recibe el apuntador a lista.
+ * Recibe el elemento donde se guardará la copia. 
+*/ 
 void list_tail(list *list, void *element)
 {
   assert(list->tail != NULL);
@@ -105,6 +131,11 @@ void list_tail(list *list, void *element)
   memcpy(element, node->data, list->elementSize);
 }
  
+/*
+ * Obtiene la longitud de la lista.
+ * Recibe un apuntador a la lista.
+ * Regresa un entero que es el numero de elementos en la lista.
+*/
 int list_size(list *list)
 {
   return list->logicalLength;

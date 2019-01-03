@@ -1,13 +1,18 @@
 /* 
  * File:   typetab.h
- * Author: Adrian Ulises Mercado Martínez
+ * Author: Melissa Mendez Servin
  *
- * Created on 3 de diciembre de 2018, 19:36
+ * Created on 25 de diciembre de 2018,
  */
 #include "typetab.h"
 #include <stdio.h>
 #include <string.h>
 
+/*
+ * Devuelve un tipo nuevo, inicializando todos sus
+ * valores en -1.
+ * Autora : Mendez Servin Melissa.
+ */
 type new_type(){
     type t;
     t.type = -1;
@@ -16,31 +21,44 @@ type new_type(){
     t.base = -1;
     return t;
 }
-type new_type2(int tipo,int tam,int dim,int base){
-    type t;
-    t.type = tipo;
-    t.tam = tam;
-    t.dim = dim;
-    t.base = base;
-    return t;
-}   
-type depth_search_type(typetab *tt, int pos)
-{   typetab *parent = tt->parent;
-    type exists = tt->types[pos]; 
-    if (exists.type == 0 && parent != NULL)
-        exists = parent->types[pos];
-    printf("pos = %d,tipoooo-> %d\n",pos,exists.type );
-    return exists;
-    //return tt->types[pos];
-}
+/*
+ * Agrega al tipo t dentro de la tabla dada, si
+ * se trata de la tabla global, agrega en su  
+ * siguiente contador, en otro caso, agrega a 
+ * partir del último tipo agregado en su tabla
+ * padre (si se trata del primero), en otro caso
+ * agrega a partir del último de la tabla actal,
+ * es decir, de su contador.
+ * Autora : Mendez Servin Melissa.
+ */
 int insert_type(typetab *tt, type t){
-    if(t.base > tt->count)
-        return -1;
-    tt->types[tt->count] = t;
-    tt->count++;  
-    //printf("Se guardó tipo.\n");      
-    return 1;
+    if(tt->parent == NULL){
+        if(t.base > tt->count)
+            return -1;
+        tt->types[tt->count] = t;
+        tt->count++;  
+        return 1;
+    }
+    else
+    {
+        typetab *parent = tt->parent;
+        int new_count = parent->count + 1;
+        if(tt->count >= new_count){
+            tt->types[tt->count] = t;
+            tt->count++;
+        }
+        else
+        {
+            tt->types[new_count] = t;
+            tt->count = new_count + 1; 
+        }
+        return 1;
+    }    
 }
+/*
+ * Imprime en consola la tabla tipos dada.
+ * Autora : Mendez Servin Melissa.
+ */
 void print_table_types(typetab* tt){    
     int i;
     printf("POS\ttype\tTAM\tDIM\tT_BASE\n");    
@@ -52,6 +70,11 @@ void print_table_types(typetab* tt){
             tt->types[i].base);          
     }
 }
+/*
+ * Escribe en el archivo dado la tabla de tipos
+ * recibida.
+ * Autora : Mendez Servin Melissa.
+ */
 void fprint_table_types(typetab* tt, FILE *file){    
     int i;
     fprintf(file,"POS\ttype\tTAM\tDIM\tT_BASE\n");    
@@ -63,20 +86,24 @@ void fprint_table_types(typetab* tt, FILE *file){
             tt->types[i].base);          
     }
 }
+/*
+ * Imprime en consola al tipo dado (auxiliar para
+ * depurar código).
+ * Autora : Mendez Servin Melissa.
+ */
 void print_type(type t){
-   // if (tt->count < i)
     printf("TIPO: %d\t%d\t%d\t%d\n", 
         t.type, 
         t.tam, 
         t.dim,
-        t.base);
-   // else printf("Error: No existe tipo.\n");          
+        t.base);         
 }
-int get_type_(typetab* tt, int pos){
-    type t = depth_search_type(tt, pos);
-    return t.type;
-}
-
+/*
+ * Devuelve el tamalo del tipo en la posisción dada 
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
+ * Autora : Mendez Servin Melissa.
+ */
 int get_tam(typetab* tt, int pos){
     int tam = tt->types[pos].tam;
     if(tam == 0){
@@ -85,7 +112,12 @@ int get_tam(typetab* tt, int pos){
     }
     return tam;
 }
-
+/*
+ * Devuelve la dimensión del tipo en la posisción dada 
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
+ * Autora : Mendez Servin Melissa.
+ */
 int get_dim(typetab* tt, int pos){
     int dim = tt->types[pos].dim;
     if(dim == 0){
@@ -94,7 +126,12 @@ int get_dim(typetab* tt, int pos){
     }
     return dim;
 }
-
+/*
+ * Devuelve la base del tipo en la posisción dada 
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
+ * Autora : Mendez Servin Melissa.
+ */
 int get_base(typetab* tt, int pos){
     int base = tt->types[pos].base;
     if(base == 0){
@@ -103,6 +140,12 @@ int get_base(typetab* tt, int pos){
     }
     return base;
 }
+/*
+ * Crea una tabla de tipos, e incializa su contador y 
+ * los tipos predefinidos o base (void,char,int,float,
+ * double,struc y cadena).
+ * Autora : Mendez Servin Melissa.
+ */
 void create_table_types(typetab *tt, void *parent){
     // Tipos base
     type void_type = new_type();
@@ -127,6 +170,9 @@ void create_table_types(typetab *tt, void *parent){
     type struct_type = new_type();
     struct_type.type = 5;
 
+    type string_type = new_type();
+    string_type.type = 6;
+    
     tt->parent = parent;
     tt->types[0] = void_type;
     tt->types[1] = char_type;
@@ -134,7 +180,8 @@ void create_table_types(typetab *tt, void *parent){
     tt->types[3] = float_type;
     tt->types[4] = double_type;
     tt->types[5] = struct_type;
-    tt->count=6;
+    tt->types[6] = string_type;
+    tt->count=7;
 }
 
 

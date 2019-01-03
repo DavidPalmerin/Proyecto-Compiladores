@@ -1,4 +1,11 @@
 %{
+	/*
+     * Análizador Léxico.
+     * Autores: Melissa Mendez Servín
+     * 			Palmerin Morales David Gabriel.
+     *
+     * Github: https://github.com/DavidPalmerin/Proyecto-Compiladores
+	*/
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <stdbool.h>
@@ -22,14 +29,16 @@
 %x q_comment_linea
 %x q_comment_mult
 
+letra   [a-zA-Z]
 id      [_a-zA-Z][_a-zA-Z0-9]{0,30}
 digito 	[0-9]
 int    	[\-]?[0-9]+
-char    \'[a-zA-Z]\'
+char    \'[^']\'
 float   [\-]?[0-9]*\.{digito}{1,7}
 double  [\-]?[0-9]*\.{digito}{8,16}
 cadena  \"[^"]*\"
 espacio [ \t]
+especial \\([^({digito}|{letra}|{esp})]|[(){}])
 
 %%
 
@@ -276,6 +285,12 @@ espacio [ \t]
 
 {char}		{ 
 				fprintf(tokens_output, "Encontré un char: %s\n", yytext);
+				yylval.car = yytext;
+				return CAR;
+			}
+
+{especial}		{ 
+				fprintf(tokens_output, "Encontré un símbolo especial: %s\n", yytext);
 				yylval.car = yytext;
 				return CAR;
 			}

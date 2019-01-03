@@ -3,6 +3,9 @@
  * Author: Adrian Ulises Mercado Martínez
  *
  * Created on 3 de diciembre de 2018, 19:59
+ * Modified on 1 de Enero de 2018
+ * Se agregan definiciones de env, switches.
+ * Agregado por: Palmerin Morales David Gabriel.
  */
 #include "symtab.h"
 #include "typetab.h"
@@ -16,6 +19,7 @@ extern "C" {
     typedef struct _exp{
         char dir[32];
         char arr[32];
+        char * cadena;
         int type;
     } exp;
     
@@ -29,11 +33,30 @@ extern "C" {
         int count;
     } labels;
 
+    typedef struct _bools{
+        labels trues;
+        labels falses;
+    } bools;
+
+    /* Se crea una pila de env que son los contextos en los que estamos. 
+     * Autor: Melissa Mendez Servín.
+              Palmerin Morales David Gabriel.
+    */ 
     typedef struct _env
     {
         symtab symbols;
         typetab types;
     } env;
+
+    /* Se usa para atributo de switch.
+     * Autor: Palmerin Morales David Gabriel.
+    */
+    typedef struct _switches
+    {
+        char label[32];
+        char caso[32];
+        int  link;
+    } switches;
 
     char *pop_label(labels*);
     void push_label(labels*, char *l);

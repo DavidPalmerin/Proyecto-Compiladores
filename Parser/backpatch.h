@@ -3,6 +3,7 @@
  * Author: Adrian Ulises Mercado Martínez
  *
  * Created on 3 de diciembre de 2018, 20:35
+ * No se realizan modificaciones al archivo proporcionado por el profesor.
  */
 
 #ifndef BACKPATH_H

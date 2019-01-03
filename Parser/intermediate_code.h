@@ -31,7 +31,9 @@ extern "C" {
 #define PARAM 17
 #define CALL 18
 #define AS_ARR 19
-  
+#define ASS 20
+#define RET 21
+
 #define MAX_CODE 1000
 
     typedef struct _cuadrupla{
@@ -39,6 +41,7 @@ extern "C" {
         char op1[32];
         char op2[32];
         char res[32];
+        char * string_op;
     } cuadrupla;
     
      
