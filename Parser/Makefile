@@ -4,7 +4,11 @@
 .PHONY : instructions clean ejec ejec show_ci show_contexts show_producciones show_err show_errlex show_tokens show_comm
 instructions:
 	@echo "make ejec"
-	@echo "		Ejecuta el compilador."
+	@echo "		Ejecuta el compilador con un archivo de prueba."	
+	@echo "make run"
+	@echo "		Compila el compilador. Seguido es neceserario"
+	@echo "		Ejecutar ./gram test.txt, donde test será su "
+	@echo "		archivo a compilar. "
 	@echo "make clean"
 	@echo "		Borra los archivos generados por el proyecto."
 	@echo "make show_ci"
@@ -28,8 +32,7 @@ instructions:
 	@echo "		dado (en el caso de existir)."
 	@echo "make show_tokens"
 	@echo "		Muestra en consola los tokens del código dado" 
-	@echo "		(en el caso de existir)."
-	
+	@echo "		(en el caso de existir)."	
 ejec :	
 	@flex lexer.flex 
 	@bison -d parser.y
@@ -42,6 +45,11 @@ ejec2:
 	@/usr/local/opt/bison@3.2/bin/bison -d parser.y
 	@$(CC) *.c -o gram -w
 	@./gram test.txt
+
+run :	
+	@flex lexer.flex 
+	@bison -d parser.y
+	@$(CC) *.c -o gram -w
 
 clean:
 	@rm -f lex.yy.c
