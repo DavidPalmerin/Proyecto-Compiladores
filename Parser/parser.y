@@ -56,7 +56,6 @@ int  struct_backup = 0;
 int func_dim = 0;
 bool func_decl = false;
 
-
 /* Varaibles para contar las temporales, etiquetas e indices */
 int label = 0;
 int temp = 0;
@@ -150,6 +149,7 @@ char *newIndex();
         labels siguientes;
         bool ifelse;
     } siguientesp;
+    arreglo array;
 }
 
 %token<car> CAR
@@ -186,7 +186,7 @@ char *newIndex();
 %type<expr> expresion parte_izq var_arreglo
 %type<rel> relacional
 %type<args> parametros
-
+%type<array> arreglo
 %start programa
 
 %%
@@ -294,30 +294,25 @@ lista :     lista
                         stack_pop(&envs, &curr_env);
 
                         int curr_tam = get_tam(&global_types,current_type);
-                        bool primero = true; 
-                        while(list_size(&dimensiones)){
-                            int temp;
-                            list_head(&dimensiones,&temp,1);
+                        
+                        int end = $4.count;
+                        //printf("ID %s AREGLOO: %d\n",$3,end);
+                        int i = end-1;
+                        for(i; i > -1; i--){
                             type tipo = new_type();
-                            
-                            if(primero)
-                            {
-                                tipo.base = symbol.type;
-                                primero = false;
-                            } 
+                            if(i == end -1) tipo.base = symbol.type;
                             else tipo.base = curr_env.types.count -1;
 
-                            tipo.dim = temp;
+                            tipo.dim = $4.array_dim[i];
                             curr_tam *= tipo.dim;
                             tipo.tam = curr_tam;
                             
                             insert_type(&curr_env.types,tipo);
                             //Cambiamos el tipo del id si es arreglo, apuntando a su última dim
-                            symbol.type = curr_env.types.count -1;
+                            symbol.type = curr_env.types.count - 1;
+
                         }   
-                        list_destroy(&dimensiones);
-                        list_new(&dimensiones, 10,NULL);
-                        
+                
                         insert(&curr_env.symbols, symbol);
                         stack_push(&envs, &curr_env);
 
@@ -372,21 +367,15 @@ lista :     lista
                         stack_pop(&envs, &curr_env);
 
                         int curr_tam = get_tam(&global_types,current_type);
-                        bool primero = true; 
-                        while(list_size(&dimensiones)){
-                            int temp;
-                            list_head(&dimensiones,&temp,1);
+                        int end = $2.count;
+                        //printf("ID %s AREGLOO: %d\n",$1,end);
+                        int i = end-1;
+                        for(i; i > -1; i--){
                             type tipo = new_type();
-                            
-                            if(primero)
-                            {
-                                tipo.base = symbol.type;
-
-                                primero = false;
-                            } 
+                            if(i == end -1) tipo.base = symbol.type;
                             else tipo.base = curr_env.types.count -1;
 
-                            tipo.dim = temp;
+                            tipo.dim = $2.array_dim[i];
                             curr_tam *= tipo.dim;
                             tipo.tam = curr_tam;
                             
@@ -395,8 +384,6 @@ lista :     lista
                             symbol.type = curr_env.types.count - 1;
 
                         }
-                        list_destroy(&dimensiones);
-                        list_new(&dimensiones, 10,NULL);
 
                         insert(&curr_env.symbols, symbol);
                         stack_push(&envs, &curr_env);
@@ -418,9 +405,14 @@ arreglo : LCOR NUMERO RCOR arreglo
                if ($2.type == 2){
                     int num = atoi($2.val);
                     current_dim *= num;
-                    list_append(&dimensiones, &num);
-                    fprintf(producciones,"arreglo -> id arreglo\n");
-                }
+                    arreglo act = create_arreglo();
+                    insert_dim(&act,num);
+                    int i;
+                    for(i = 0; i < $4.count ; i++){
+                        insert_dim(&act,$4.array_dim[i]);
+                    }
+                    $$ = act;
+                }   
                 else{ 
                     fail_decl = true;
                     yyerror("[ERROR ] La dimensión del arreglo se debe indicar con un entero.");

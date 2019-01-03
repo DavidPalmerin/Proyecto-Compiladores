@@ -42,7 +42,7 @@ int insert_type(typetab *tt, type t){
     else
     {
         typetab *parent = tt->parent;
-        int new_count = parent->count + 1;
+        int new_count = parent->count;
         if(tt->count >= new_count){
             tt->types[tt->count] = t;
             tt->count++;
@@ -183,5 +183,23 @@ void create_table_types(typetab *tt, void *parent){
     tt->types[6] = string_type;
     tt->count=7;
 }
-
-
+/*
+ * Te devuelve un arreglo, e inicializa
+ * su contador en 0.
+ * Autora: Mendez Servin Melissa.
+ */
+arreglo create_arreglo(){
+    arreglo a;
+    a.count = 0;
+    return a;
+}
+/*
+ * Agrega un elemento a un arreglo, refi-
+ * riendose al tamaño de la dimensión 
+ * que se está definiendo.
+ * Autora: Mendez Servin Melissa.
+ */
+void insert_dim(arreglo *a,int d){
+    a->array_dim[a->count] = d;
+    a->count++;
+}

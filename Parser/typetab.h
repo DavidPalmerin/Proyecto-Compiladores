@@ -43,6 +43,18 @@ extern "C" {
         void *parent;
     } typetab;
 
+    /*
+     * Auxiliar para el manejo de las dimensiones de un a-
+     * rreglo, el cual tiene capacidad de a lo más 10 di-
+     * mensiones.
+     * Autora: Mendez Servin Melissa.
+     */
+    typedef struct _arreglo
+    {
+        int array_dim[10];
+        int count;
+    }arreglo;
+    
     type new_type(void);
     int insert_type(typetab*, type );
     void print_table_types(typetab*);
@@ -52,6 +64,8 @@ extern "C" {
     int get_dim(typetab* tt, int pos);
     int get_base(typetab* tt, int pos);
     void print_type(type t);
+    void insert_dim(arreglo*,int d);
+    arreglo create_arreglo();
     
 #ifdef __cplusplus
 }
