@@ -213,6 +213,7 @@ decl :      tipo    {
                         current_type = $1;
                         current_dim = get_tam(&global_types,$1);
                         struct_dim = 0;
+
                     }      
             lista PYC decl {
                                 fprintf(producciones,"decl -> tipo lista PYC decl\n");
@@ -314,8 +315,7 @@ lista :     lista
                             insert_type(&curr_env.types,tipo);
                             //Cambiamos el tipo del id si es arreglo, apuntando a su última dim
                             symbol.type = curr_env.types.count -1;
-                        }
-                        primero = false;    
+                        }   
                         list_destroy(&dimensiones);
                         list_new(&dimensiones, 10,NULL);
                         
@@ -368,8 +368,9 @@ lista :     lista
                         }
                         strcpy(symbol.id, $1);
                         symbol.type = current_type;
-
+                            
                         stack_pop(&envs, &curr_env);
+
                         int curr_tam = get_tam(&global_types,current_type);
                         bool primero = true; 
                         while(list_size(&dimensiones)){
@@ -380,6 +381,7 @@ lista :     lista
                             if(primero)
                             {
                                 tipo.base = symbol.type;
+
                                 primero = false;
                             } 
                             else tipo.base = curr_env.types.count -1;
@@ -391,8 +393,8 @@ lista :     lista
                             insert_type(&curr_env.types,tipo);
                             //Cambiamos el tipo del id si es arreglo, apuntando a su última dim
                             symbol.type = curr_env.types.count - 1;
+
                         }
-                        primero = false;
                         list_destroy(&dimensiones);
                         list_new(&dimensiones, 10,NULL);
 
@@ -760,6 +762,7 @@ sentencia :  IF LPAR condicion RPAR
                         int compatible = max_type($1.type, $3.type);
                         if(compatible == -1) {
                             yyerror("No se puede asignar, tipos incompatibles.");
+                            printf(ANSI_COLOR_RED "Error: " ANSI_COLOR_RESET "No se puede asignar, tipos incompatibles, se espera un %s y se está dando un %s\n : en la línea %d\n",get_type_gen($1.type), get_type_gen($3.type), yylineno);
                             imprime_ci = false;
                         }
                         else {
@@ -1002,17 +1005,21 @@ var_arreglo : ID LCOR expresion RCOR
             {
                 env curr_env;
                 stack_peek(&envs, &curr_env);
+
                 if (depth_search(&curr_env.symbols, $1) == -1)
                     {
                         yyerror2("No se encontró el identificador", $1);
                         fail_decl = true;
                         return -1;
                     }
+                //Identificador del arreglo    
                 strcpy($$.arr,$1);
+                //Dirección a partir de la que se va a empizar a hacer el cálculo
                 exp base_dir;
                 sprintf(base_dir.dir,"%d",get_dir(&curr_env.symbols,$1));
                 base_dir.type = 2;
                 int curr_type = get_type(&curr_env.symbols,$1);
+
                 if( $3.type != 2)
                     {
                     yyerror("Para acceder a un arreglo la expresión o número debe ser un entero ");
@@ -1030,7 +1037,7 @@ var_arreglo : ID LCOR expresion RCOR
                 }
                 else
                 {
-                    int base_type = get_base(&curr_env.types,curr_type);
+                    int base_type = get_base(&curr_env.types,curr_type); 
 
                     exp arr_index = $3;
 
@@ -1067,8 +1074,6 @@ var_arreglo : ID LCOR expresion RCOR
                     yyerror("Para acceder a un arreglo la expresión o número debe ser un entero ");
                     fail_decl = true;
                     }
-                env curr_env;
-                stack_peek(&envs, &curr_env);
                 if($1.type == -1){
                     yyerror("Fuera de rango ");
                     fail_decl = true;
@@ -1080,6 +1085,9 @@ var_arreglo : ID LCOR expresion RCOR
                 }
                 else
                     {
+                        env curr_env;
+                        stack_peek(&envs, &curr_env);
+                        
                         exp base_dir;
                         strcpy(base_dir.dir,$1.dir);
                         base_dir.type = 2;

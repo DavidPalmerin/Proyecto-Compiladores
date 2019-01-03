@@ -6,7 +6,7 @@ struct {
 } pixel1, pixel2, pixel3;
 
 /* Imagen de dos pixeles. */
-int colores[3];
+char colores[4];
 double ruido;
 
 /* Función que obtiene el promedio de dos enteros.*/
@@ -35,11 +35,13 @@ func int normalizar(double promedio, int color)
 
 func int cambiar_color(int nuevo, int n)
 {
+	int cuadricula[5][2];
 	int i;
+	cuadricula[3][1] = 0;
 	while (i() < n())
 	{
 		pixel1.red   = nuevo() + i();
-		pixel1.green = nuevo() + i();
+		pixel1.green =  cuadricula[3][1];
 		pixel1.blue  = nuevo() + i();
 	}
 	return 1;
@@ -47,7 +49,7 @@ func int cambiar_color(int nuevo, int n)
 
 /* Finjamos que regresa un número aleatorio. */
 func double gen_aleatorio(int ini, int fin)
-{
+{	
 	int sum;
 	sum = ini() * fin();
 	switch(sum())
@@ -66,6 +68,17 @@ func int main()
 	int i;
 	int ROJO;
 	double promedio;
+	int frame[10][8][4];
+	char palabra[10];
+	char especial[2];
+	palabra = "¡Colores!";
+
+	especial[0] = \{;
+	i = 0;
+	colores[0] = 'r';
+	colores[i() +1] = 'g';
+	colores[i() +2] = 'b';
+	colores[3] = especial[0];
 
 	// Colores de pixel 1.
 	pixel1.red   = 100;
@@ -95,6 +108,9 @@ func int main()
 	i = cambiar_color(100, 3);
 	if (i() == 1) 
 		return 1;
+	
+	frame[5][2][2] = 100;
+	print palabra();
 	return 0;
 }
 

@@ -22,15 +22,38 @@ type new_type(){
     return t;
 }
 /*
- * Agrega al tipo t dentro de la tabla dada.
+ * Agrega al tipo t dentro de la tabla dada, si
+ * se trata de la tabla global, agrega en su  
+ * siguiente contador, en otro caso, agrega a 
+ * partir del último tipo agregado en su tabla
+ * padre (si se trata del primero), en otro caso
+ * agrega a partir del último de la tabla actal,
+ * es decir, de su contador.
  * Autora : Mendez Servin Melissa.
  */
 int insert_type(typetab *tt, type t){
-    if(t.base > tt->count)
-        return -1;
-    tt->types[tt->count] = t;
-    tt->count++;  
-    return 1;
+    if(tt->parent == NULL){
+        if(t.base > tt->count)
+            return -1;
+        tt->types[tt->count] = t;
+        tt->count++;  
+        return 1;
+    }
+    else
+    {
+        typetab *parent = tt->parent;
+        int new_count = parent->count + 1;
+        if(tt->count >= new_count){
+            tt->types[tt->count] = t;
+            tt->count++;
+        }
+        else
+        {
+            tt->types[new_count] = t;
+            tt->count = new_count + 1; 
+        }
+        return 1;
+    }    
 }
 /*
  * Imprime en consola la tabla tipos dada.
@@ -77,7 +100,8 @@ void print_type(type t){
 }
 /*
  * Devuelve el tamalo del tipo en la posisción dada 
- * dentro de la tabla de típos.
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
  * Autora : Mendez Servin Melissa.
  */
 int get_tam(typetab* tt, int pos){
@@ -90,7 +114,8 @@ int get_tam(typetab* tt, int pos){
 }
 /*
  * Devuelve la dimensión del tipo en la posisción dada 
- * dentro de la tabla de típos.
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
  * Autora : Mendez Servin Melissa.
  */
 int get_dim(typetab* tt, int pos){
@@ -103,7 +128,8 @@ int get_dim(typetab* tt, int pos){
 }
 /*
  * Devuelve la base del tipo en la posisción dada 
- * dentro de la tabla de típos.
+ * dentro de la tabla de típos actual, en otro caso
+ * busca dentro de la tabla de tipos padre.
  * Autora : Mendez Servin Melissa.
  */
 int get_base(typetab* tt, int pos){
