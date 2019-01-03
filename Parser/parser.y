@@ -1033,8 +1033,6 @@ var_arreglo : ID LCOR expresion RCOR
                     int base_type = get_base(&curr_env.types,curr_type);
 
                     exp arr_index = $3;
-                    //printf("->> Index: %s\n",arr_index.dir);
-                    //printf("->> Tipo base: %d\n",base_type);
 
                     $$.type = base_type;
                     /*Creamos la exp con el valor del tamaño del tipo base para multiplicar y obtner la dirección nueva
@@ -1184,16 +1182,21 @@ expresion:   expresion MAS expresion
                         funrec rec = *get_rec(&global_funcs, $1);
                         stack_push(&func_calls, &rec);
                     }
-
+                    else{
+                        funrec *rec = (funrec*) malloc(sizeof(funrec));
+                        strcpy(rec->id, "non-fun");
+                        stack_push(&func_calls, rec);
+                    }
                     strcpy(curr_function, $1);
                   }                   
                 LPAR parametros RPAR 
                 {   
                     env curr_env;
+                    funrec rec;
+
                     stack_peek(&envs, &curr_env);
                     if (is_function(&global_funcs, $1))
                     {   
-                        funrec rec;
                         stack_pop(&func_calls, &rec);
                         if (rec.params != rec.counter)
                         {
@@ -1208,7 +1211,7 @@ expresion:   expresion MAS expresion
                         yyerror2("No corresponde a una función el identificador", $1);
                         fail_decl = true;
                     }
-
+                    else stack_pop(&func_calls, &rec);
 
                     /* Asigna tipo esperado. */
                     strcpy($$.dir, $1);
@@ -1253,7 +1256,9 @@ lista_param: lista_param COM expresion
             | expresion 
                 {
                     /* Si es una variable entonces hay error pues no debe tener parámetros.*/
-                    if(!is_function(&global_funcs, curr_function))
+                    funrec rec;
+                    stack_peek(&func_calls, &rec);
+                    if(strcmp(rec.id, "non-fun") == 0)
                     {
                         yyerror2("No corresponde a una función el identificador", curr_function);
                         return -1;
@@ -1270,7 +1275,6 @@ lista_param: lista_param COM expresion
                         strcpy(cuad.res, e->dir);
                     }
                     
-                    funrec rec;
                     stack_pop(&func_calls, &rec);
                     if(check_args_types(&rec, $1) < 0)
                         return -1;

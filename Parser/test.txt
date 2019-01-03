@@ -1,58 +1,101 @@
-double a,b,c;
-double x;
+/* Estructura para definir un pixel. */
 struct {
 	int red;
 	int green;
 	int blue;
-	int cyan;
 } pixel1, pixel2, pixel3;
-double shadow;
-double light;
 
-func double suma_args()
+/* Imagen de dos pixeles. */
+int colores[3];
+double ruido;
+
+/* Función que obtiene el promedio de dos enteros.*/
+func double promedio_colores(int color1, int color2)
 {
-//	print a() + b() + c();
-	return a();
+	int suma;
+	suma = color1() + color2();
+	return suma() / 2;
 }
 
-func int iterar_while(int n)
+/*
+ * Regresa la representación entero de un double.
+ */
+func int redondear_ruido()
+{
+	return ruido();
+}
+
+/* Obtiene la división de ambos argumentos */
+func int normalizar(double promedio, int color)
+{
+	if (promedio() != 0)
+		return color() / promedio();
+	return 0;
+}
+
+func int cambiar_color(int nuevo, int n)
 {
 	int i;
-	double suma;
 	while (i() < n())
 	{
- 		suma =   a() + b() + c();
-		suma = i() + 1;
-		print 1;
+		pixel1.red   = nuevo() + i();
+		pixel1.green = nuevo() + i();
+		pixel1.blue  = nuevo() + i();
 	}
-	switch(i()){
-		case : 0 a = a() + 1;
-		case : 1 a = a() + 2;
-	}
-	return suma();
+	return 1;
 }
 
+/* Finjamos que regresa un número aleatorio. */
+func double gen_aleatorio(int ini, int fin)
+{
+	int sum;
+	sum = ini() * fin();
+	switch(sum())
+	{
+		case : 0
+			return 0;
+		case : 5
+			return 5;
+	}
+	return 10;
+}
+
+/* Función principal del programa. */
 func int main()
 {
-	//int suma_while();
-	double suma_while;
-	char cadenita[6];
-	char especial;
-	int array[7][8][2];
-//	cadenita = "holi";
-	pixel1.red = 255;
-//	pixel2.red = 0;
-	a = 2;
-	b = 3;
-	c = 4;
-	especial = \#;
-	especial = 'a';
-	especial = '1';
-	especial = \+;
-	especial = \(;
-	suma_while =  iterar_while(suma_args());
-	array[0][1][1] = 1;
-	array[0][2][1] = array[6][5][0];
-	//print a()
-	print a();
+	int i;
+	int ROJO;
+	double promedio;
+
+	// Colores de pixel 1.
+	pixel1.red   = 100;
+	pixel1.green = 200;
+	pixel1.blue  = 50;
+
+	// Colores de pixel 2.
+	pixel2.red = 30;
+	pixel2.green = 234;
+	pixel2.blue = 80;
+
+	// Colores de pixel 3.
+	pixel3.red   = promedio_colores(150, 200);
+	pixel3.green = promedio_colores(12, 20);
+	pixel3.blue  = promedio_colores(1, 2);
+
+	ruido = 0.6;
+	if (ruido() <= 0.5)
+		ruido = redondear_ruido();
+
+	for (i = 0; ; i() < 3; i = i() + 1;){
+		if (i() % 2 == 0)
+			pixel1.red = normalizar(gen_aleatorio(0, 10), ROJO());
+		ruido = redondear_ruido();
+	}
+
+	i = cambiar_color(100, 3);
+	if (i() == 1) 
+		return 1;
+	return 0;
 }
+
+
