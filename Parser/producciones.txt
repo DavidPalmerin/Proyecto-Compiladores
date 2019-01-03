@@ -1,0 +1,347 @@
+tipo -> INT
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+tipo -> struct { decl }
+lista- >id arreglo
+lista -> lista , id arreglo
+lista -> lista , id arreglo
+tipo -> CHAR
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> DOUBLE
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+tipo -> DOUBLE
+tipo -> INT
+lista_args -> tipo id parte_arr
+tipo -> INT
+lista_args -> lista_args , tipo id parte_arr
+argumentos -> lista_args
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+parte_izq -> id
+expresion -> id color1 ( parametros )
+expresion -> id color2 ( parametros )
+expresion -> expresion + expresion 
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+expresion -> id suma ( parametros )
+expresion -> num 2
+expresion -> expresion / expresion 
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+tipo -> INT
+expresion -> id ruido ( parametros )
+sentencia -> return expresion ;
+sentencias -> sentencia
+tipo -> INT
+tipo -> DOUBLE
+lista_args -> tipo id parte_arr
+tipo -> INT
+lista_args -> lista_args , tipo id parte_arr
+argumentos -> lista_args
+expresion -> id promedio ( parametros )
+rel->  !=
+expresion -> num 0
+condicion -> expresion rel expresion 
+expresion -> id color ( parametros )
+expresion -> id promedio ( parametros )
+expresion -> expresion / expresion 
+sentencia -> return expresion ;
+sentencias -> sentencia
+expresion -> num 0
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+tipo -> INT
+tipo -> INT
+lista_args -> tipo id parte_arr
+tipo -> INT
+lista_args -> lista_args , tipo id parte_arr
+argumentos -> lista_args
+tipo -> INT
+arreglo -> id arreglo
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+expresion -> num 3
+var_arreglo -> id [ expresion ] 
+expresion -> num 1
+var_arreglo -> var arreglo [ expresion ]
+parte_izq -> var_arreglo
+expresion -> num 0
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+expresion -> id i ( parametros )
+rel->  <
+expresion -> id n ( parametros )
+condicion -> expresion rel expresion 
+parte_izq -> id.id
+expresion -> id nuevo ( parametros )
+expresion -> id i ( parametros )
+expresion -> expresion + expresion 
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+parte_izq -> id.id
+expresion -> num 3
+var_arreglo -> id [ expresion ] 
+expresion -> num 1
+var_arreglo -> var arreglo [ expresion ]
+expresion -> var_arreglo
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> id nuevo ( parametros )
+expresion -> id i ( parametros )
+expresion -> expresion + expresion 
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+sentencia -> { sentencias }
+sentencia -> while ( condicion) sentencia;
+sentencias -> sentencias sentencia
+expresion -> num 1
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+tipo -> DOUBLE
+tipo -> INT
+lista_args -> tipo id parte_arr
+tipo -> INT
+lista_args -> lista_args , tipo id parte_arr
+argumentos -> lista_args
+tipo -> INT
+lista- >id arreglo
+decl -> tipo lista PYC decl
+parte_izq -> id
+expresion -> id ini ( parametros )
+expresion -> id fin ( parametros )
+expresion -> expresion * expresion 
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+expresion -> id sum ( parametros )
+expresion -> num 0
+sentencia -> return expresion ;
+sentencias -> sentencia
+expresion -> num 5
+sentencia -> return expresion ;
+sentencias -> sentencia
+casos : case : NUMERO sentencias casoscasos : case : NUMERO sentencias casossentencia -> switch ( expresion ) { casos predeterm} ;
+sentencias -> sentencias sentencia
+expresion -> num 10
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+tipo -> INT
+tipo -> INT
+lista- >id arreglo
+tipo -> INT
+lista- >id arreglo
+tipo -> DOUBLE
+lista- >id arreglo
+tipo -> INT
+arreglo -> id arreglo
+arreglo -> id arreglo
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> CHAR
+arreglo -> id arreglo
+lista- >id arreglo
+tipo -> CHAR
+arreglo -> id arreglo
+lista- >id arreglo
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+decl -> tipo lista PYC decl
+parte_izq -> id
+expresion -> cadena "¡Colores!"
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+expresion -> num 0
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> car \{
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id
+expresion -> num 0
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+expresion -> num 0
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> car 'r'
+sentencias -> sentencias sentencia
+expresion -> id i ( parametros )
+expresion -> num 1
+expresion -> expresion + expresion 
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> car 'g'
+sentencias -> sentencias sentencia
+expresion -> id i ( parametros )
+expresion -> num 2
+expresion -> expresion + expresion 
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> car 'b'
+sentencias -> sentencias sentencia
+expresion -> num 3
+var_arreglo -> id [ expresion ] 
+parte_izq -> var_arreglo
+expresion -> num 0
+var_arreglo -> id [ expresion ] 
+expresion -> var_arreglo
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 100
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 200
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 50
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 30
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 234
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 80
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 150
+func 150lista_param -> expresion
+expresion -> num 200
+func 200lista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id promedio_colores ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 12
+func 12lista_param -> expresion
+expresion -> num 20
+func 20lista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id promedio_colores ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id.id
+expresion -> num 1
+func 1lista_param -> expresion
+expresion -> num 2
+func 2lista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id promedio_colores ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id
+expresion -> num 0.6
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+expresion -> id ruido ( parametros )
+rel->  <=
+expresion -> num 0.5
+condicion -> expresion rel expresion 
+parte_izq -> id
+expresion -> id redondear_ruido ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+parte_izq -> id
+expresion -> num 0
+sentencia -> parte_izq = expresion ;
+expresion -> id i ( parametros )
+rel->  <
+expresion -> num 3
+condicion -> expresion rel expresion 
+parte_izq -> id
+expresion -> id i ( parametros )
+expresion -> num 1
+expresion -> expresion + expresion 
+sentencia -> parte_izq = expresion ;
+expresion -> id i ( parametros )
+expresion -> num 2
+expresion -> expresion mod expresion 
+rel->  ==
+expresion -> num 0
+condicion -> expresion rel expresion 
+parte_izq -> id.id
+expresion -> num 0
+func 0lista_param -> expresion
+expresion -> num 10
+func 10lista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id gen_aleatorio ( parametros )
+func t53lista_param -> expresion
+expresion -> id ROJO ( parametros )
+func ROJOlista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id normalizar ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencia
+parte_izq -> id
+expresion -> id redondear_ruido ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+sentencia -> { sentencias }
+sentencia -> for ( sentencia ; condicion; sentencia ) sentencias
+sentencias -> sentencias sentencia
+parte_izq -> id
+expresion -> num 100
+func 100lista_param -> expresion
+expresion -> num 3
+func 3lista_param -> lista_param , expresion
+parametros-> lista_param
+expresion -> id cambiar_color ( parametros )
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+expresion -> id i ( parametros )
+rel->  ==
+expresion -> num 1
+condicion -> expresion rel expresion 
+expresion -> num 1
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+expresion -> num 5
+var_arreglo -> id [ expresion ] 
+expresion -> num 2
+var_arreglo -> var arreglo [ expresion ]
+expresion -> num 2
+var_arreglo -> var arreglo [ expresion ]
+parte_izq -> var_arreglo
+expresion -> num 100
+sentencia -> parte_izq = expresion ;
+sentencias -> sentencias sentencia
+expresion -> id palabra ( parametros )
+sentencia -> print expresion ;
+sentencias -> sentencias sentencia
+expresion -> num 0
+sentencia -> return expresion ;
+sentencias -> sentencias sentencia
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+funciones -> fun tipo id ( argumentos ) { decl sentencias } funciones
+programa -> decl funciones

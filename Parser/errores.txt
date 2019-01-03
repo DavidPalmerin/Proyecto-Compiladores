@@ -1,0 +1,4 @@
+No se puede asignar, tipos incompatibles.: en la línea 78
+No se puede asignar, tipos incompatibles.: en la línea 79
+No se puede asignar, tipos incompatibles.: en la línea 80
+No se puede asignar, tipos incompatibles.: en la línea 81
