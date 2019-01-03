@@ -42,7 +42,7 @@ int insert_type(typetab *tt, type t){
     else
     {
         typetab *parent = tt->parent;
-        int new_count = parent->count + 1;
+        int new_count = parent->count;
         if(tt->count >= new_count){
             tt->types[tt->count] = t;
             tt->count++;
@@ -184,4 +184,13 @@ void create_table_types(typetab *tt, void *parent){
     tt->count=7;
 }
 
+arreglo create_arreglo(){
+    arreglo a;
+    a.count = 0;
+    return a;
+}
 
+void insert_dim(arreglo *a,int d){
+    a->array_dim[a->count] = d;
+    a->count++;
+}

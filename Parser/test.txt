@@ -35,8 +35,7 @@ func int normalizar(double promedio, int color)
 
 func int cambiar_color(int nuevo, int n)
 {
-	int cuadricula[5][2];
-	int i;
+	int cuadricula[5][2], i;
 	cuadricula[3][1] = 0;
 	while (i() < n())
 	{
