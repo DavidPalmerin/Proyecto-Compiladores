@@ -25,6 +25,10 @@ func int iterar_while(int n)
 		suma = i() + 1;
 		print 1;
 	}
+	switch(i()){
+		case : 0 a = a() + 1;
+		case : 1 a = a() + 2;
+	}
 	return suma();
 }
 

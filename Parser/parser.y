@@ -486,7 +486,6 @@ funciones : FUNC
                         int ret_val = $2 == 0 ? 1 : get_tam(&global_types, $2);
                         int func_tam = dir + ret_val;
                         dir = func_tam;
-                        printf("DIR before: %d\n", func_tam);
                         del_context(false);
                         dir -= func_tam;
                         env curr_env;                        
@@ -812,6 +811,11 @@ sentencia :  IF LPAR condicion RPAR
                 }
             | SWITCH LPAR expresion RPAR
                 {
+                    if ($3.type != 2){
+                        yyerror("Switch solo acepta valores enteros");
+                        imprime_ci = false;
+                    }
+
                     push_label(&lcontrol, newLabel());
                     push_label(&lcontrol, newLabel());
                     switch_call++;
@@ -877,6 +881,11 @@ sentencia :  IF LPAR condicion RPAR
 
 casos : CASE PUNES NUMERO 
             {
+                if ($3.type != 2){
+                    yyerror("El valor de case debe ser un entero");
+                    imprime_ci = false;
+            }
+
                 cuadrupla cuad;
                 char index[32];
                 strcpy(index, newLabel());
