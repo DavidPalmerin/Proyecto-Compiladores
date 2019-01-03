@@ -1,8 +1,17 @@
 double a,b,c;
 double x;
+struct {
+	int red;
+	int green;
+	int blue;
+	int cyan;
+} pixel1, pixel2, pixel3;
+double shadow;
+double light;
+
 func double suma_args()
 {
-	print a() + b() + c();
+//	print a() + b() + c();
 	return a();
 }
 
@@ -26,7 +35,9 @@ func int main()
 	double suma_while;
 	char cadenita[6];
 	int array[7][8][2];
-	cadenita = "holi";
+//	cadenita = "holi";
+	pixel1.red = 255;
+//	pixel2.red = 0;
 	a = 2;
 	b = 3;
 	c = 4;

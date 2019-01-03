@@ -50,6 +50,7 @@ int current_dim;
 /* Variable para iniciar el conteo de dimensiones en un struct*/
 bool struct_decl = false;
 int  struct_dim = 0;
+int  struct_backup = 0;
 
 /* Variable para indicar el conteo de dimensiones de una función */
 int func_dim = 0;
@@ -79,6 +80,7 @@ int    call_params = 0;
 char   curr_function[32];
 stack  func_calls;
 int    return_type = -1;
+env    struct_env;
 
 /* Pila para cases de switch*/
 stack switchesback;
@@ -210,6 +212,7 @@ programa:       { init(); }
 decl :      tipo    {   
                         current_type = $1;
                         current_dim = get_tam(&global_types,$1);
+                        struct_dim = 0;
                     }      
             lista PYC decl {
                                 fprintf(producciones,"decl -> tipo lista PYC decl\n");
@@ -259,11 +262,6 @@ lista :     lista
                         yyerror2("Ya existe un identificador con el nombre", $3);
                         fail_decl = true;
                     }                
-                    if (current_type == 5)
-                    {
-                        yyerror("Struct solo puede tener un identificador.");
-                        fail_decl = true;
-                    }
                     if(current_type == 0)
                     {
                         yyerror("No se pueden declarar variables de tipo void.");
@@ -277,11 +275,22 @@ lista :     lista
                         /*Agregamos el elemento a la tabla de símbolos. Si es un arreglo
                           calcula su direccion. */
                         sym symbol;
+                        if (current_type == 5)
+                        {   
+                            int last_dir = dir;
+                            symtab *syms = (symtab*) malloc(sizeof(symtab));
+                            *syms = struct_env.symbols;
+                            symbol.struct_content = syms;
+                            symbol.dir = dir;
+                            dir += struct_dim;
+                        }
+                        else{
+                            symbol.dir = dir;
+                            dir += current_dim;
+                        }
                         strcpy(symbol.id, $3);
                         symbol.type = current_type;
-                        symbol.dir  = dir;
-                        dir += current_dim;
-                        
+
                         stack_pop(&envs, &curr_env);
 
                         int curr_tam = get_tam(&global_types,current_type);
@@ -312,7 +321,8 @@ lista :     lista
                         
                         insert(&curr_env.symbols, symbol);
                         stack_push(&envs, &curr_env);
-                        if (struct_decl){
+
+                        if (struct_decl && current_dim >= 0){
                             struct_dim += current_dim;
                         }
                         
@@ -343,19 +353,21 @@ lista :     lista
                         if (current_type == 5)
                         {   
                             int last_dir = dir;
-                            env struct_env;
+                            struct_dim = dir;
                             stack_peek(&envs, &struct_env);
                             symtab *syms = (symtab*) malloc(sizeof(symtab));
                             *syms = struct_env.symbols;
                             symbol.struct_content = syms;
+                            struct_dim = last_dir;
                             del_context(false);
                             symbol.dir = top_dir;
                         }
-                        else symbol.dir = dir;
-
+                        else {
+                            symbol.dir = dir;
+                            dir += current_dim;
+                        }
                         strcpy(symbol.id, $1);
                         symbol.type = current_type;
-                        dir += current_dim;
 
                         stack_pop(&envs, &curr_env);
                         int curr_tam = get_tam(&global_types,current_type);
@@ -386,16 +398,22 @@ lista :     lista
 
                         insert(&curr_env.symbols, symbol);
                         stack_push(&envs, &curr_env);
-                        if (struct_decl){
+
+                        if (struct_decl && current_dim >= 0){
                             struct_dim += current_dim;
                         }
+
                         fprintf(producciones,"lista- >id arreglo\n");
                     }
                 };
 
 arreglo : LCOR NUMERO RCOR arreglo 
             {   
-                if ($2.type == 2){
+ 	       if (current_type == 5){
+	       	    fail_decl = true;
+		    yyerror("No puedes asignar un arreglo como identificador a un struct");
+	       } 
+               if ($2.type == 2){
                     int num = atoi($2.val);
                     current_dim *= num;
                     list_append(&dimensiones, &num);
